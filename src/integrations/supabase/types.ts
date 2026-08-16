@@ -14,16 +14,265 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      attendance: {
+        Row: {
+          boarded: boolean
+          boarding_staff: string | null
+          boarding_time: string | null
+          bus_number: string | null
+          id: string
+          return_staff: string | null
+          return_time: string | null
+          returned: boolean
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          boarded?: boolean
+          boarding_staff?: string | null
+          boarding_time?: string | null
+          bus_number?: string | null
+          id?: string
+          return_staff?: string | null
+          return_time?: string | null
+          returned?: boolean
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          boarded?: boolean
+          boarding_staff?: string | null
+          boarding_time?: string | null
+          bus_number?: string | null
+          id?: string
+          return_staff?: string | null
+          return_time?: string | null
+          returned?: boolean
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendees: {
+        Row: {
+          created_at: string
+          dietary_requirement: string | null
+          email: string
+          event_id: string
+          first_name: string
+          form_submission_id: string | null
+          id: string
+          student_number: string
+          surname: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dietary_requirement?: string | null
+          email: string
+          event_id: string
+          first_name: string
+          form_submission_id?: string | null
+          id?: string
+          student_number: string
+          surname: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dietary_requirement?: string | null
+          email?: string
+          event_id?: string
+          first_name?: string
+          form_submission_id?: string | null
+          id?: string
+          student_number?: string
+          surname?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          email_body: string
+          email_domain: string
+          email_from: string | null
+          email_subject: string
+          event_date: string | null
+          google_sheet_url: string | null
+          id: string
+          is_active: boolean
+          name: string
+          subtitle: string | null
+          theme: string | null
+          ticket_prefix: string
+          ticket_price: number | null
+          updated_at: string
+          venue: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_body?: string
+          email_domain?: string
+          email_from?: string | null
+          email_subject?: string
+          event_date?: string | null
+          google_sheet_url?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          subtitle?: string | null
+          theme?: string | null
+          ticket_prefix?: string
+          ticket_price?: number | null
+          updated_at?: string
+          venue?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_body?: string
+          email_domain?: string
+          email_from?: string | null
+          email_subject?: string
+          event_date?: string | null
+          google_sheet_url?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          subtitle?: string | null
+          theme?: string | null
+          ticket_prefix?: string
+          ticket_price?: number | null
+          updated_at?: string
+          venue?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      tickets: {
+        Row: {
+          attendee_id: string
+          email_sent_at: string | null
+          event_id: string
+          id: string
+          issued_at: string
+          qr_token: string
+          status: string
+          ticket_number: string
+          ticket_url: string | null
+        }
+        Insert: {
+          attendee_id: string
+          email_sent_at?: string | null
+          event_id: string
+          id?: string
+          issued_at?: string
+          qr_token: string
+          status?: string
+          ticket_number: string
+          ticket_url?: string | null
+        }
+        Update: {
+          attendee_id?: string
+          email_sent_at?: string | null
+          event_id?: string
+          id?: string
+          issued_at?: string
+          qr_token?: string
+          status?: string
+          ticket_number?: string
+          ticket_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_attendee_id_fkey"
+            columns: ["attendee_id"]
+            isOneToOne: true
+            referencedRelation: "attendees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +399,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "staff"],
+    },
   },
 } as const
