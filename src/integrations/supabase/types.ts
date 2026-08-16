@@ -270,6 +270,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      next_ticket_number: { Args: { _prefix?: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "staff"
