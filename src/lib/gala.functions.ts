@@ -382,7 +382,7 @@ export const updateEventSettings = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
     const { id, ...patch } = data;
-    const { error } = await supabase.from("events").update(patch).eq("id", id);
+    const { error } = await supabase.from("events").update(patch as never).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
