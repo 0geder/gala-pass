@@ -149,7 +149,7 @@ function SidebarFooter({
   me,
   onSignOut,
 }: {
-  me?: { email: string | null; fullName: string | null; isAdmin: boolean };
+  me?: { email: string | null; fullName: string | null; isAdmin: boolean } | undefined;
   onSignOut: () => void;
 }) {
   return (
