@@ -38,10 +38,10 @@ function Countdown({ target }: { target: Date }) {
   ];
 
   return (
-    <div className="mt-8 flex gap-6 sm:gap-10">
+    <div className="flex gap-5 sm:gap-7">
       {units.map(([label, value]) => (
         <div key={label}>
-          <p className="font-display text-4xl tabular-nums text-ivory sm:text-5xl">
+          <p className="font-display text-2xl tabular-nums text-ivory sm:text-3xl">
             {String(value).padStart(2, "0")}
           </p>
           <p className="mt-1 text-[9px] tracking-editorial text-champagne/60">{label}</p>
@@ -102,11 +102,12 @@ function Landing() {
           </h1>
           <div className="rule-gold my-8 max-w-md" />
           <p className="text-[11px] tracking-editorial text-gold">THE ROSCOMMON FORMAL</p>
-          <p className="mt-3 text-sm tracking-[0.2em] text-champagne/70">
-            16 OCTOBER 2026 · SUIKERBOSSIE
-          </p>
-
-          <Countdown target={EVENT_DATE} />
+          <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
+            <p className="text-sm tracking-[0.2em] text-champagne/70">
+              16 OCTOBER 2026 · SUIKERBOSSIE
+            </p>
+            <Countdown target={EVENT_DATE} />
+          </div>
 
           <div className="mt-10 flex flex-wrap gap-3">
             <Button asChild size="lg" className="h-12">
