@@ -5,6 +5,52 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/gala-hero.jpg";
 
+const EVENT_DATE = new Date("2026-10-16T00:00:00");
+
+function getCountdown(target: Date) {
+  const diff = target.getTime() - Date.now();
+  if (diff <= 0) return null;
+  const totalSeconds = Math.floor(diff / 1000);
+  return {
+    days: Math.floor(totalSeconds / 86400),
+    hours: Math.floor((totalSeconds % 86400) / 3600),
+    minutes: Math.floor((totalSeconds % 3600) / 60),
+    seconds: totalSeconds % 60,
+  };
+}
+
+function Countdown({ target }: { target: Date }) {
+  const [parts, setParts] = useState<ReturnType<typeof getCountdown>>(null);
+
+  useEffect(() => {
+    setParts(getCountdown(target));
+    const id = setInterval(() => setParts(getCountdown(target)), 1000);
+    return () => clearInterval(id);
+  }, [target]);
+
+  if (!parts) return null;
+
+  const units: [string, number][] = [
+    ["DAYS", parts.days],
+    ["HOURS", parts.hours],
+    ["MINUTES", parts.minutes],
+    ["SECONDS", parts.seconds],
+  ];
+
+  return (
+    <div className="mt-8 flex gap-6 sm:gap-10">
+      {units.map(([label, value]) => (
+        <div key={label}>
+          <p className="font-display text-4xl tabular-nums text-ivory sm:text-5xl">
+            {String(value).padStart(2, "0")}
+          </p>
+          <p className="mt-1 text-[9px] tracking-editorial text-champagne/60">{label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -56,7 +102,11 @@ function Landing() {
           </h1>
           <div className="rule-gold my-8 max-w-md" />
           <p className="text-[11px] tracking-editorial text-gold">THE ROSCOMMON FORMAL</p>
-          <p className="mt-3 text-sm tracking-[0.2em] text-champagne/70">16 OCTOBER 2026 · SUIKERBOSSIE</p>
+          <p className="mt-3 text-sm tracking-[0.2em] text-champagne/70">
+            16 OCTOBER 2026 · SUIKERBOSSIE
+          </p>
+
+          <Countdown target={EVENT_DATE} />
 
           <div className="mt-10 flex flex-wrap gap-3">
             <Button asChild size="lg" className="h-12">
@@ -74,9 +124,21 @@ function Landing() {
           </div>
 
           <div className="mt-16 grid gap-6 sm:grid-cols-3">
-            <Feature icon={Ticket} title="UNIQUE TICKETS" body="One attendee, one ticket, one secure QR token." />
-            <Feature icon={QrCode} title="CAMERA CHECK-IN" body="Scan, verify server-side, board in one tap." />
-            <Feature icon={BusFront} title="LIVE ATTENDANCE" body="Know exactly who boarded and who has returned." />
+            <Feature
+              icon={Ticket}
+              title="UNIQUE TICKETS"
+              body="One attendee, one ticket, one secure QR token."
+            />
+            <Feature
+              icon={QrCode}
+              title="CAMERA CHECK-IN"
+              body="Scan, verify server-side, board in one tap."
+            />
+            <Feature
+              icon={BusFront}
+              title="LIVE ATTENDANCE"
+              body="Know exactly who boarded and who has returned."
+            />
           </div>
 
           <p className="mt-14 flex items-center gap-2 text-xs text-champagne/50">
