@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Ticket as TicketIcon, Upload } from "lucide-react";
+import { Loader2, Mail, RotateCw, Ticket as TicketIcon, Upload } from "lucide-react";
 import { PageHeader } from "@/components/gala/AppShell";
 import { GalaTicket } from "@/components/gala/GalaTicket";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { formatTime, useMe, useOverview, type RosterRow } from "@/hooks/useGala";
 import { importAttendees, issueMissingTickets } from "@/lib/gala.functions";
+import { resendTicketEmail, retryTicketGeneration } from "@/lib/integration.functions";
 
 export const Route = createFileRoute("/_authenticated/attendees")({
   head: () => ({
@@ -24,7 +25,10 @@ export const Route = createFileRoute("/_authenticated/attendees")({
           "Full guest register for Met Gala: Burgundy and Black — student numbers, dietary requirements, tickets and attendance state.",
       },
       { property: "og:title", content: "Attendees | Roscommon House Met Gala" },
-      { property: "og:description", content: "Guest register and CSV import for the Roscommon Formal." },
+      {
+        property: "og:description",
+        content: "Guest register and CSV import for the Roscommon Formal.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -40,7 +44,9 @@ function parseCsv(text: string) {
   if (lines.length === 0) return [];
   const split = (line: string) => line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
   const header = split(lines[0]!).map((h) => h.toLowerCase());
-  const looksLikeHeader = header.some((h) => h.includes("name") || h.includes("student") || h.includes("smid"));
+  const looksLikeHeader = header.some(
+    (h) => h.includes("name") || h.includes("student") || h.includes("smid"),
+  );
   const body = looksLikeHeader ? lines.slice(1) : lines;
 
   const idx = (...keys: string[]) => header.findIndex((h) => keys.some((k) => h.includes(k)));
@@ -68,33 +74,43 @@ function AttendeesPage() {
   const queryClient = useQueryClient();
   const runImport = useServerFn(importAttendees);
   const runIssue = useServerFn(issueMissingTickets);
+  const runRetry = useServerFn(retryTicketGeneration);
+  const runResend = useServerFn(resendTicketEmail);
 
   const [search, setSearch] = useState("");
   const [csv, setCsv] = useState("");
   const [importOpen, setImportOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<RosterRow | null>(null);
+  const [rowBusyId, setRowBusyId] = useState<string | null>(null);
 
   const roster = data?.roster ?? [];
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return roster;
     return roster.filter((r) =>
-      [r.firstName, r.surname, r.studentNumber, r.email, r.ticketNumber ?? ""].join(" ").toLowerCase().includes(q),
+      [r.firstName, r.surname, r.studentNumber, r.email, r.ticketNumber ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(q),
     );
   }, [roster, search]);
 
   async function doImport() {
     const rows = parseCsv(csv);
     if (rows.length === 0) {
-      toast.error("No valid rows found", { description: "Expected: First name, Surname, Student number, Dietary" });
+      toast.error("No valid rows found", {
+        description: "Expected: First name, Surname, Student number, Dietary",
+      });
       return;
     }
     setBusy(true);
     try {
       const result = await runImport({ data: { rows } });
       toast.success(`${result.imported} attendee(s) imported`, {
-        description: result.skipped.length ? `${result.skipped.length} duplicate(s) skipped` : "Tickets issued",
+        description: result.skipped.length
+          ? `${result.skipped.length} duplicate(s) skipped`
+          : "Tickets issued",
       });
       setCsv("");
       setImportOpen(false);
@@ -110,12 +126,48 @@ function AttendeesPage() {
     setBusy(true);
     try {
       const result = await runIssue({});
-      toast.success(result.issued > 0 ? `${result.issued} ticket(s) issued` : "Every attendee already has a ticket");
+      toast.success(
+        result.issued > 0
+          ? `${result.issued} ticket(s) issued`
+          : "Every attendee already has a ticket",
+      );
       queryClient.invalidateQueries({ queryKey: ["gala", "overview"] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not issue tickets");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function retryTicket(attendeeId: string) {
+    setRowBusyId(attendeeId);
+    try {
+      const result = await runRetry({ data: { attendeeId } });
+      toast.success(`Ticket ${result.ticketNumber} issued`);
+      queryClient.invalidateQueries({ queryKey: ["gala", "overview"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not issue ticket");
+    } finally {
+      setRowBusyId(null);
+    }
+  }
+
+  async function resendEmail(attendeeId: string) {
+    setRowBusyId(attendeeId);
+    try {
+      const result = await runResend({ data: { attendeeId, origin: window.location.origin } });
+      if (result.status === "sent") {
+        toast.success("Ticket email sent");
+      } else if (result.status === "pending") {
+        toast.error("No mail provider configured — email queued");
+      } else {
+        toast.error("Email delivery failed");
+      }
+      queryClient.invalidateQueries({ queryKey: ["gala", "overview"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not send email");
+    } finally {
+      setRowBusyId(null);
     }
   }
 
@@ -189,11 +241,43 @@ function AttendeesPage() {
                   <StatusBadge row={r} />
                 </td>
                 <td className="px-4 py-3 text-right">
-                  {r.qrToken && (
-                    <Button size="sm" variant="ghost" onClick={() => setPreview(r)}>
-                      View ticket
-                    </Button>
-                  )}
+                  <div className="flex items-center justify-end gap-1">
+                    {r.qrToken && (
+                      <Button size="sm" variant="ghost" onClick={() => setPreview(r)}>
+                        View ticket
+                      </Button>
+                    )}
+                    {me?.isAdmin && !r.ticketNumber && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={rowBusyId === r.id}
+                        onClick={() => retryTicket(r.id)}
+                      >
+                        {rowBusyId === r.id ? (
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        ) : (
+                          <RotateCw className="mr-1 h-3 w-3" />
+                        )}
+                        Retry ticket
+                      </Button>
+                    )}
+                    {me?.isAdmin && r.ticketNumber && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={rowBusyId === r.id}
+                        onClick={() => resendEmail(r.id)}
+                      >
+                        {rowBusyId === r.id ? (
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Mail className="mr-1 h-3 w-3" />
+                        )}
+                        Resend email
+                      </Button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -207,15 +291,18 @@ function AttendeesPage() {
             <DialogTitle className="font-display text-2xl">Import attendees</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Paste rows from the Google Sheet as CSV. Columns: <em>First name, Surname, Student number, Dietary</em>.
-            Emails are generated from the student number, duplicates are skipped and a unique ticket + QR token is
-            issued automatically.
+            Paste rows from the Google Sheet as CSV. Columns:{" "}
+            <em>First name, Surname, Student number, Dietary</em>. Emails are generated from the
+            student number, duplicates are skipped and a unique ticket + QR token is issued
+            automatically.
           </p>
           <Textarea
             value={csv}
             onChange={(e) => setCsv(e.target.value)}
             rows={9}
-            placeholder={"First name,Surname,Student number,Dietary\nSamson,Okuthe,OKTSAM001,Halaal"}
+            placeholder={
+              "First name,Surname,Student number,Dietary\nSamson,Okuthe,OKTSAM001,Halaal"
+            }
             className="font-mono text-xs"
           />
           <div className="flex justify-end gap-2">

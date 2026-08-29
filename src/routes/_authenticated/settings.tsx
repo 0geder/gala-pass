@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/gala/AppShell";
+import { GoogleIntegrationPanel } from "@/components/gala/GoogleIntegrationPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,10 +19,14 @@ export const Route = createFileRoute("/_authenticated/settings")({
       { title: "Event Settings | Roscommon House Met Gala" },
       {
         name: "description",
-        content: "Configure the Met Gala event details, student email domain, ticket prefix and ticket email copy.",
+        content:
+          "Configure the Met Gala event details, student email domain, ticket prefix and ticket email copy.",
       },
       { property: "og:title", content: "Event Settings | Roscommon House Met Gala" },
-      { property: "og:description", content: "Event, ticketing and email configuration for the Roscommon Formal." },
+      {
+        property: "og:description",
+        content: "Event, ticketing and email configuration for the Roscommon Formal.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -116,70 +121,125 @@ function SettingsPage() {
   const readOnly = !me?.isAdmin;
 
   return (
-    <form onSubmit={submit} className="max-w-3xl">
+    <div className="max-w-3xl">
       <PageHeader
         eyebrow="CONFIGURATION"
         title="Event Settings"
-        description={readOnly ? "Only administrators can change these settings." : "Event identity, ticketing rules and email delivery."}
+        description={
+          readOnly
+            ? "Only administrators can change these settings."
+            : "Event identity, ticketing rules and email delivery."
+        }
       />
 
-      <fieldset disabled={readOnly || busy} className="space-y-8">
-        <Section title="EVENT">
-          <Field label="Event name" id="name">
-            <Input id="name" value={form.name} onChange={set("name")} required />
-          </Field>
-          <Field label="Subtitle" id="subtitle">
-            <Input id="subtitle" value={form.subtitle} onChange={set("subtitle")} />
-          </Field>
-          <Field label="Date" id="date">
-            <Input id="date" type="date" value={form.event_date} onChange={set("event_date")} />
-          </Field>
-          <Field label="Venue" id="venue">
-            <Input id="venue" value={form.venue} onChange={set("venue")} />
-          </Field>
-          <Field label="Ticket price (ZAR)" id="price">
-            <Input id="price" inputMode="decimal" value={form.ticket_price} onChange={set("ticket_price")} />
-          </Field>
-          <Field label="Theme" id="theme">
-            <Input id="theme" value={form.theme} onChange={set("theme")} />
-          </Field>
-        </Section>
+      <div className="mb-8">
+        <GoogleIntegrationPanel />
+      </div>
 
-        <Section title="TICKETING">
-          <Field label="Student email domain" id="domain" hint="Emails are generated as studentnumber + domain.">
-            <Input id="domain" value={form.email_domain} onChange={set("email_domain")} required />
-          </Field>
-          <Field label="Ticket prefix" id="prefix" hint="e.g. RCF → RCF-0001">
-            <Input id="prefix" value={form.ticket_prefix} onChange={set("ticket_prefix")} required maxLength={8} />
-          </Field>
-          <Field label="Google Sheet URL" id="sheet" hint="Source of Google Form responses for synchronisation.">
-            <Input id="sheet" value={form.google_sheet_url} onChange={set("google_sheet_url")} placeholder="https://docs.google.com/spreadsheets/…" />
-          </Field>
-        </Section>
+      <form onSubmit={submit}>
+        <fieldset disabled={readOnly || busy} className="space-y-8">
+          <Section title="EVENT">
+            <Field label="Event name" id="name">
+              <Input id="name" value={form.name} onChange={set("name")} required />
+            </Field>
+            <Field label="Subtitle" id="subtitle">
+              <Input id="subtitle" value={form.subtitle} onChange={set("subtitle")} />
+            </Field>
+            <Field label="Date" id="date">
+              <Input id="date" type="date" value={form.event_date} onChange={set("event_date")} />
+            </Field>
+            <Field label="Venue" id="venue">
+              <Input id="venue" value={form.venue} onChange={set("venue")} />
+            </Field>
+            <Field label="Ticket price (ZAR)" id="price">
+              <Input
+                id="price"
+                inputMode="decimal"
+                value={form.ticket_price}
+                onChange={set("ticket_price")}
+              />
+            </Field>
+            <Field label="Theme" id="theme">
+              <Input id="theme" value={form.theme} onChange={set("theme")} />
+            </Field>
+          </Section>
 
-        <Section title="TICKET EMAIL">
-          <Field label="Sender address" id="from">
-            <Input id="from" value={form.email_from} onChange={set("email_from")} placeholder="roscommonhouse@myuct.ac.za" />
-          </Field>
-          <Field label="Subject" id="subject">
-            <Input id="subject" value={form.email_subject} onChange={set("email_subject")} required />
-          </Field>
-          <Field label="Body" id="body">
-            <Textarea id="body" rows={5} value={form.email_body} onChange={set("email_body")} required />
-          </Field>
-          <p className="text-xs text-muted-foreground">
-            Delivery credentials are never stored in the browser. Connect a mail provider secret server-side before
-            enabling automatic sending.
-          </p>
-        </Section>
+          <Section title="TICKETING">
+            <Field
+              label="Student email domain"
+              id="domain"
+              hint="Emails are generated as studentnumber + domain."
+            >
+              <Input
+                id="domain"
+                value={form.email_domain}
+                onChange={set("email_domain")}
+                required
+              />
+            </Field>
+            <Field label="Ticket prefix" id="prefix" hint="e.g. RCF → RCF-0001">
+              <Input
+                id="prefix"
+                value={form.ticket_prefix}
+                onChange={set("ticket_prefix")}
+                required
+                maxLength={8}
+              />
+            </Field>
+            <Field
+              label="Google Sheet URL"
+              id="sheet"
+              hint="Source of Google Form responses for synchronisation."
+            >
+              <Input
+                id="sheet"
+                value={form.google_sheet_url}
+                onChange={set("google_sheet_url")}
+                placeholder="https://docs.google.com/spreadsheets/…"
+              />
+            </Field>
+          </Section>
 
-        {!readOnly && (
-          <Button type="submit" disabled={busy} size="lg">
-            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save settings
-          </Button>
-        )}
-      </fieldset>
-    </form>
+          <Section title="TICKET EMAIL">
+            <Field label="Sender address" id="from">
+              <Input
+                id="from"
+                value={form.email_from}
+                onChange={set("email_from")}
+                placeholder="roscommonhouse@myuct.ac.za"
+              />
+            </Field>
+            <Field label="Subject" id="subject">
+              <Input
+                id="subject"
+                value={form.email_subject}
+                onChange={set("email_subject")}
+                required
+              />
+            </Field>
+            <Field label="Body" id="body">
+              <Textarea
+                id="body"
+                rows={5}
+                value={form.email_body}
+                onChange={set("email_body")}
+                required
+              />
+            </Field>
+            <p className="text-xs text-muted-foreground">
+              Delivery credentials are never stored in the browser. Connect a mail provider secret
+              server-side before enabling automatic sending.
+            </p>
+          </Section>
+
+          {!readOnly && (
+            <Button type="submit" disabled={busy} size="lg">
+              {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save settings
+            </Button>
+          )}
+        </fieldset>
+      </form>
+    </div>
   );
 }
 

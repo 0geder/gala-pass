@@ -20,6 +20,7 @@ import { Route as AuthenticatedReturnsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
+import { Route as TTokenRouteImport } from './routes/t/$token'
 import { Route as ApiPublicIntegrationsGoogleFormRouteImport } from './routes/api/public/integrations/google-form'
 
 const IndexRoute = IndexRouteImport.update({
@@ -76,6 +77,11 @@ const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const TTokenRoute = TTokenRouteImport.update({
+  id: '/t/$token',
+  path: '/t/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIntegrationsGoogleFormRoute =
   ApiPublicIntegrationsGoogleFormRouteImport.update({
     id: '/api/public/integrations/google-form',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/scan': typeof AuthenticatedScanRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/t/$token': typeof TTokenRoute
   '/api/public/integrations/google-form': typeof ApiPublicIntegrationsGoogleFormRoute
 }
 export interface FileRoutesByTo {
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/scan': typeof AuthenticatedScanRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/t/$token': typeof TTokenRoute
   '/api/public/integrations/google-form': typeof ApiPublicIntegrationsGoogleFormRoute
 }
 export interface FileRoutesById {
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
+  '/t/$token': typeof TTokenRoute
   '/api/public/integrations/google-form': typeof ApiPublicIntegrationsGoogleFormRoute
 }
 export interface FileRouteTypes {
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/settings'
     | '/tickets'
+    | '/t/$token'
     | '/api/public/integrations/google-form'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/settings'
     | '/tickets'
+    | '/t/$token'
     | '/api/public/integrations/google-form'
   id:
     | '__root__'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/_authenticated/scan'
     | '/_authenticated/settings'
     | '/_authenticated/tickets'
+    | '/t/$token'
     | '/api/public/integrations/google-form'
   fileRoutesById: FileRoutesById
 }
@@ -171,6 +183,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  TTokenRoute: typeof TTokenRoute
   ApiPublicIntegrationsGoogleFormRoute: typeof ApiPublicIntegrationsGoogleFormRoute
 }
 
@@ -253,6 +266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTicketsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/t/$token': {
+      id: '/t/$token'
+      path: '/t/$token'
+      fullPath: '/t/$token'
+      preLoaderRoute: typeof TTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/integrations/google-form': {
       id: '/api/public/integrations/google-form'
       path: '/api/public/integrations/google-form'
@@ -292,6 +312,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  TTokenRoute: TTokenRoute,
   ApiPublicIntegrationsGoogleFormRoute: ApiPublicIntegrationsGoogleFormRoute,
 }
 export const routeTree = rootRouteImport
