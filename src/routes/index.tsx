@@ -92,7 +92,14 @@ function Landing() {
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,oklch(0.147_0.002_17/0.75),oklch(0.229_0.093_17.5/0.85))]" />
 
         <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6 py-20">
-          <p className="text-[10px] tracking-editorial text-champagne/80">ROSCOMMON HOUSE</p>
+          <div className="flex items-center gap-3">
+            <img
+              src="/roscommon.png"
+              alt="Roscommon House"
+              className="h-8 w-auto brightness-0 invert sm:h-9"
+            />
+            <p className="text-[10px] tracking-editorial text-champagne/80">ROSCOMMON HOUSE</p>
+          </div>
           <h1 className="font-display mt-6 text-5xl leading-[0.9] text-ivory sm:text-7xl lg:text-8xl">
             MET GALA
             <br />

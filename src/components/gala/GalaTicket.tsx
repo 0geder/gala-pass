@@ -55,9 +55,12 @@ export function GalaTicket({ ticket, event }: { ticket: TicketData; event?: Tick
 
       {/* Main */}
       <div className="flex-1 bg-ivory p-7 text-noir">
-        <div className="flex items-start justify-between gap-4">
+        <img src="/roscommon.png" alt="Roscommon House" className="h-9 w-auto" />
+        <div className="mt-5 flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] tracking-editorial text-burgundy">FORMAL DINNER · INVITATION</p>
+            <p className="text-[10px] tracking-editorial text-burgundy">
+              FORMAL DINNER · INVITATION
+            </p>
             <h2 className="font-display mt-2 text-3xl leading-tight text-burgundy-deep sm:text-4xl">
               {event?.name ?? "MET GALA: BURGUNDY AND BLACK"}
             </h2>
