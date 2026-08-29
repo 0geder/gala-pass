@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -164,6 +164,70 @@ export type Database = {
           venue?: string | null
         }
         Relationships: []
+      }
+      integration_logs: {
+        Row: {
+          attendee_id: string | null
+          created_at: string
+          event_id: string | null
+          form_submission_id: string | null
+          id: string
+          message: string | null
+          payload: Json | null
+          source: string
+          status: string
+          student_number: string | null
+          ticket_id: string | null
+        }
+        Insert: {
+          attendee_id?: string | null
+          created_at?: string
+          event_id?: string | null
+          form_submission_id?: string | null
+          id?: string
+          message?: string | null
+          payload?: Json | null
+          source?: string
+          status?: string
+          student_number?: string | null
+          ticket_id?: string | null
+        }
+        Update: {
+          attendee_id?: string | null
+          created_at?: string
+          event_id?: string | null
+          form_submission_id?: string | null
+          id?: string
+          message?: string | null
+          payload?: Json | null
+          source?: string
+          status?: string
+          student_number?: string | null
+          ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_logs_attendee_id_fkey"
+            columns: ["attendee_id"]
+            isOneToOne: false
+            referencedRelation: "attendees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_logs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
