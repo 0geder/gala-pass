@@ -126,3 +126,44 @@ function testPing() {
     source: "google_forms",
   });
 }
+
+/**
+ * One-time backfill: pushes every existing row in the response sheet through
+ * the same webhook the live trigger uses. Safe to re-run — the backend
+ * dedupes by formSubmissionId (row number) and by student number, so already-
+ * issued attendees are skipped, not duplicated.
+ */
+function backfillAllRows() {
+  var sheet =
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Form Responses 1") ||
+    SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0].map(normaliseKey);
+
+  for (var row = 1; row < data.length; row++) {
+    var answers = {};
+    headers.forEach(function (h, i) {
+      answers[h] = data[row][i];
+    });
+
+    var payload = {
+      firstName: pick(answers, FIELD_MAP.firstName),
+      surname: pick(answers, FIELD_MAP.surname),
+      studentNumber: pick(answers, FIELD_MAP.studentNumber),
+      dietaryRequirement: pick(answers, FIELD_MAP.dietaryRequirement) || null,
+      formSubmissionId: "row-" + (row + 1),
+      source: "google_forms",
+    };
+    var email = pick(answers, FIELD_MAP.email);
+    if (email) payload.email = email;
+
+    if (!payload.firstName || !payload.surname || !payload.studentNumber) {
+      Logger.log("Skipping row " + (row + 1) + " — missing required fields: " + JSON.stringify(payload));
+      continue;
+    }
+
+    postToBackend(payload);
+    Utilities.sleep(300);
+  }
+  Logger.log("Backfill complete — check the Integration Log in Settings for per-row results.");
+}
