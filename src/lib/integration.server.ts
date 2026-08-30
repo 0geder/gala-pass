@@ -8,10 +8,10 @@ export type FormSubmission = {
   firstName: string;
   surname: string;
   studentNumber: string;
-  dietaryRequirement?: string | null;
-  email?: string | null;
-  formSubmissionId?: string | null;
-  source?: string | null;
+  dietaryRequirement?: string | null | undefined;
+  email?: string | null | undefined;
+  formSubmissionId?: string | null | undefined;
+  source?: string | null | undefined;
 };
 
 export type IntakeResult = {
@@ -87,7 +87,7 @@ export async function issueTicketForAttendee(eventId: string, attendeeId: string
  */
 export async function sendTicketEmail(params: {
   to: string;
-  from?: string | null;
+  from?: string | null | undefined;
   subject: string;
   body: string;
   ticketNumber: string;
