@@ -134,36 +134,63 @@ function testPing() {
  * issued attendees are skipped, not duplicated.
  */
 function backfillAllRows() {
-  var sheet =
-    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Form Responses 1") ||
-    SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  // This script may be bound to the Form or to the Sheet depending on how it
+  // was created — handle both the same way onFormSubmit does for live events.
+  var form = FormApp.getActiveForm();
+  if (form) {
+    var responses = form.getResponses();
+    Logger.log("Backfilling " + responses.length + " form response(s)...");
+    responses.forEach(function (response) {
+      var answers = {};
+      response.getItemResponses().forEach(function (item) {
+        answers[normaliseKey(item.getItem().getTitle())] = item.getResponse();
+      });
+      sendBackfillRow(answers, "row-" + response.getId());
+    });
+    Logger.log("Backfill complete — check the Integration Log in Settings for per-row results.");
+    return;
+  }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    Logger.log(
+      "This script isn't bound to a Form or a Spreadsheet. Open it from the Form's " +
+        "Extensions > Apps Script (or the Sheet's) and run backfillAllRows from there.",
+    );
+    return;
+  }
+  var sheet = ss.getSheetByName("Form Responses 1") || ss.getSheets()[0];
   var data = sheet.getDataRange().getValues();
   var headers = data[0].map(normaliseKey);
+  Logger.log("Backfilling " + (data.length - 1) + " sheet row(s)...");
 
   for (var row = 1; row < data.length; row++) {
-    var answers = {};
+    var rowAnswers = {};
     headers.forEach(function (h, i) {
-      answers[h] = data[row][i];
+      rowAnswers[h] = data[row][i];
     });
-
-    var payload = {
-      firstName: pick(answers, FIELD_MAP.firstName),
-      surname: pick(answers, FIELD_MAP.surname),
-      studentNumber: pick(answers, FIELD_MAP.studentNumber),
-      dietaryRequirement: pick(answers, FIELD_MAP.dietaryRequirement) || null,
-      formSubmissionId: "row-" + (row + 1),
-      source: "google_forms",
-    };
-    var email = pick(answers, FIELD_MAP.email);
-    if (email) payload.email = email;
-
-    if (!payload.firstName || !payload.surname || !payload.studentNumber) {
-      Logger.log("Skipping row " + (row + 1) + " — missing required fields: " + JSON.stringify(payload));
-      continue;
-    }
-
-    postToBackend(payload);
-    Utilities.sleep(300);
+    sendBackfillRow(rowAnswers, "row-" + (row + 1));
   }
   Logger.log("Backfill complete — check the Integration Log in Settings for per-row results.");
+}
+
+function sendBackfillRow(answers, submissionId) {
+  var payload = {
+    firstName: pick(answers, FIELD_MAP.firstName),
+    surname: pick(answers, FIELD_MAP.surname),
+    studentNumber: pick(answers, FIELD_MAP.studentNumber),
+    dietaryRequirement: pick(answers, FIELD_MAP.dietaryRequirement) || null,
+    formSubmissionId: submissionId,
+    source: "google_forms",
+  };
+  var email = pick(answers, FIELD_MAP.email);
+  if (email) payload.email = email;
+
+  if (!payload.firstName || !payload.surname || !payload.studentNumber) {
+    Logger.log("Skipping " + submissionId + " — missing required fields: " + JSON.stringify(payload));
+    return;
+  }
+
+  postToBackend(payload);
+  Utilities.sleep(300);
 }
