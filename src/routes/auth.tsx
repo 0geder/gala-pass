@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,10 +13,14 @@ export const Route = createFileRoute("/auth")({
       { title: "Staff Access | Roscommon House Met Gala" },
       {
         name: "description",
-        content: "Sign in to the Roscommon House Met Gala ticketing, QR verification and bus attendance console.",
+        content:
+          "Sign in to the Roscommon House Met Gala ticketing, QR verification and bus attendance console.",
       },
       { property: "og:title", content: "Staff Access | Roscommon House Met Gala" },
-      { property: "og:description", content: "Event staff sign-in for Met Gala: Burgundy and Black." },
+      {
+        property: "og:description",
+        content: "Event staff sign-in for Met Gala: Burgundy and Black.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -67,18 +70,6 @@ function AuthPage() {
     }
   }
 
-  async function google() {
-    setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) {
-      toast.error("Google sign-in failed");
-      setBusy(false);
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: "/dashboard", replace: true });
-  }
-
   return (
     <div className="surface-noir flex min-h-screen items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
@@ -90,7 +81,10 @@ function AuthPage() {
           <p className="text-xs tracking-[0.2em] text-champagne/60">STAFF & ORGANISER ACCESS</p>
         </div>
 
-        <form onSubmit={submit} className="mt-8 space-y-4 rounded-sm border border-sidebar-border bg-noir/60 p-6">
+        <form
+          onSubmit={submit}
+          className="mt-8 space-y-4 rounded-sm border border-sidebar-border bg-noir/60 p-6"
+        >
           {mode === "signup" && (
             <div className="space-y-2">
               <Label htmlFor="name" className="text-champagne">
@@ -137,15 +131,14 @@ function AuthPage() {
           <Button type="submit" disabled={busy} className="h-12 w-full">
             {mode === "signin" ? "Sign in" : "Create staff account"}
           </Button>
-          <Button type="button" variant="outline" disabled={busy} className="w-full" onClick={google}>
-            Continue with Google
-          </Button>
           <button
             type="button"
             className="w-full pt-2 text-xs text-champagne/60 underline-offset-4 hover:underline"
             onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
           >
-            {mode === "signin" ? "Need an account? Register as staff" : "Already registered? Sign in"}
+            {mode === "signin"
+              ? "Need an account? Register as staff"
+              : "Already registered? Sign in"}
           </button>
         </form>
         <p className="mt-4 text-center text-[10px] tracking-wide text-champagne/40">
