@@ -114,6 +114,7 @@ export type Database = {
           email_body: string
           email_domain: string
           email_from: string | null
+          email_reply_to: string | null
           email_subject: string
           event_date: string | null
           google_sheet_url: string | null
@@ -132,6 +133,7 @@ export type Database = {
           email_body?: string
           email_domain?: string
           email_from?: string | null
+          email_reply_to?: string | null
           email_subject?: string
           event_date?: string | null
           google_sheet_url?: string | null
@@ -150,6 +152,7 @@ export type Database = {
           email_body?: string
           email_domain?: string
           email_from?: string | null
+          email_reply_to?: string | null
           email_subject?: string
           event_date?: string | null
           google_sheet_url?: string | null

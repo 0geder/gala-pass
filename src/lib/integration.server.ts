@@ -88,6 +88,7 @@ export async function issueTicketForAttendee(eventId: string, attendeeId: string
 export async function sendTicketEmail(params: {
   to: string;
   from?: string | null | undefined;
+  replyTo?: string | null | undefined;
   subject: string;
   body: string;
   ticketNumber: string;
@@ -116,6 +117,7 @@ export async function sendTicketEmail(params: {
       body: JSON.stringify({
         from: params.from || "tickets@resend.dev",
         to: [params.to],
+        ...(params.replyTo ? { reply_to: [params.replyTo] } : {}),
         subject: params.subject,
         html,
       }),
@@ -138,7 +140,7 @@ export async function processFormSubmission(submission: FormSubmission, origin: 
 
   const { data: event, error: evErr } = await supabaseAdmin
     .from("events")
-    .select("id, name, email_domain, ticket_prefix, email_from, email_subject, email_body")
+    .select("id, name, email_domain, ticket_prefix, email_from, email_reply_to, email_subject, email_body")
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -232,6 +234,7 @@ export async function processFormSubmission(submission: FormSubmission, origin: 
     const emailStatus = await sendTicketEmail({
       to: attendee.email,
       from: event.email_from,
+      replyTo: event.email_reply_to,
       subject: event.email_subject,
       body: event.email_body,
       ticketNumber: ticket.ticket_number,

@@ -1,15 +1,14 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Mail, MailCheck } from "lucide-react";
+import { Loader2, Mail, MailCheck } from "lucide-react";
 import { PageHeader } from "@/components/gala/AppShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useMe, useOverview } from "@/hooks/useGala";
-import { markTicketsEmailed } from "@/lib/gala.functions";
-import { supabase } from "@/integrations/supabase/client";
+import { getIntegrationStatus, resendTicketEmail } from "@/lib/integration.functions";
 
 export const Route = createFileRoute("/_authenticated/emails")({
   head: () => ({
@@ -32,23 +31,49 @@ function EmailsPage() {
   const { data } = useOverview();
   const { data: me } = useMe();
   const queryClient = useQueryClient();
-  const markSent = useServerFn(markTicketsEmailed);
+  const runResend = useServerFn(resendTicketEmail);
+  const fetchStatus = useServerFn(getIntegrationStatus);
+  const { data: status } = useQuery({ queryKey: ["gala", "integration-status"], queryFn: () => fetchStatus() });
   const [busy, setBusy] = useState(false);
+  const [rowBusyId, setRowBusyId] = useState<string | null>(null);
 
   const event = data?.event;
   const roster = (data?.roster ?? []).filter((r) => r.ticketNumber);
   const pending = roster.filter((r) => !r.emailSentAt);
+  const mailProviderConfigured = status?.mailProviderConfigured ?? false;
 
-  async function markAll() {
-    const ids = await ticketIdsFor(pending.map((r) => r.ticketNumber!));
-    if (ids.length === 0) return;
-    setBusy(true);
+  async function sendOne(attendeeId: string) {
+    setRowBusyId(attendeeId);
     try {
-      await markSent({ data: { ticketIds: ids } });
-      toast.success(`${ids.length} ticket(s) marked as sent`);
+      const result = await runResend({ data: { attendeeId, origin: window.location.origin } });
+      if (result.status === "sent") toast.success("Ticket email sent");
+      else if (result.status === "pending") toast.error("No mail provider configured — email queued");
+      else toast.error("Email delivery failed");
       queryClient.invalidateQueries({ queryKey: ["gala", "overview"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not update tickets");
+      toast.error(e instanceof Error ? e.message : "Could not send email");
+    } finally {
+      setRowBusyId(null);
+    }
+  }
+
+  async function sendAll() {
+    setBusy(true);
+    let sent = 0;
+    let failed = 0;
+    try {
+      for (const r of pending) {
+        try {
+          const result = await runResend({ data: { attendeeId: r.id, origin: window.location.origin } });
+          if (result.status === "sent") sent += 1;
+          else failed += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      if (sent > 0) toast.success(`${sent} ticket email(s) sent`);
+      if (failed > 0) toast.error(`${failed} email(s) could not be sent`);
+      queryClient.invalidateQueries({ queryKey: ["gala", "overview"] });
     } finally {
       setBusy(false);
     }
@@ -62,8 +87,13 @@ function EmailsPage() {
         description="Each attendee receives their personalised ticket at the address derived from their student number."
         action={
           me?.isAdmin && pending.length > 0 ? (
-            <Button onClick={markAll} disabled={busy}>
-              <MailCheck className="mr-2 h-4 w-4" /> Mark {pending.length} as sent
+            <Button onClick={sendAll} disabled={busy}>
+              {busy ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="mr-2 h-4 w-4" />
+              )}
+              Send {pending.length} pending
             </Button>
           ) : null
         }
@@ -86,11 +116,12 @@ function EmailsPage() {
             <dd className="whitespace-pre-wrap text-muted-foreground">{event?.email_body}</dd>
           </div>
         </dl>
-        <p className="mt-5 rounded-sm border border-accent/40 bg-accent/10 p-3 text-xs text-muted-foreground">
-          Automatic sending needs a mail provider connected server-side. Credentials are stored as backend secrets and
-          are never exposed to the browser. Until then, tickets can be viewed and printed from the Tickets page and
-          delivery recorded here.
-        </p>
+        {!mailProviderConfigured && (
+          <p className="mt-5 rounded-sm border border-accent/40 bg-accent/10 p-3 text-xs text-muted-foreground">
+            No mail provider is configured yet, so sending will queue rather than deliver. Add a{" "}
+            <code>RESEND_API_KEY</code> server secret to enable delivery.
+          </p>
+        )}
       </section>
 
       <div className="shadow-elegant overflow-x-auto rounded-sm border border-border bg-card">
@@ -101,6 +132,7 @@ function EmailsPage() {
               <th className="px-4 py-3">TICKET</th>
               <th className="px-4 py-3">EMAIL</th>
               <th className="px-4 py-3">DELIVERY</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -125,6 +157,23 @@ function EmailsPage() {
                     </Badge>
                   )}
                 </td>
+                <td className="px-4 py-3 text-right">
+                  {me?.isAdmin && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={rowBusyId === r.id}
+                      onClick={() => sendOne(r.id)}
+                    >
+                      {rowBusyId === r.id ? (
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      ) : (
+                        <Mail className="mr-1 h-3 w-3" />
+                      )}
+                      {r.emailSentAt ? "Resend" : "Send"}
+                    </Button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -132,10 +181,4 @@ function EmailsPage() {
       </div>
     </div>
   );
-}
-
-async function ticketIdsFor(ticketNumbers: string[]) {
-  if (ticketNumbers.length === 0) return [];
-  const { data } = await supabase.from("tickets").select("id").in("ticket_number", ticketNumbers);
-  return (data ?? []).map((t) => t.id);
 }

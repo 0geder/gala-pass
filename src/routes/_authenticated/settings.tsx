@@ -44,6 +44,7 @@ type Form = {
   email_domain: string;
   ticket_prefix: string;
   email_from: string;
+  email_reply_to: string;
   email_subject: string;
   email_body: string;
   google_sheet_url: string;
@@ -70,6 +71,7 @@ function SettingsPage() {
       email_domain: event.email_domain ?? "@myuct.ac.za",
       ticket_prefix: event.ticket_prefix ?? "RCF",
       email_from: event.email_from ?? "",
+      email_reply_to: event.email_reply_to ?? "",
       email_subject: event.email_subject ?? "",
       email_body: event.email_body ?? "",
       google_sheet_url: event.google_sheet_url ?? "",
@@ -104,6 +106,7 @@ function SettingsPage() {
           email_domain: form.email_domain,
           ticket_prefix: form.ticket_prefix.toUpperCase(),
           email_from: form.email_from,
+          email_reply_to: form.email_reply_to,
           email_subject: form.email_subject,
           email_body: form.email_body,
           google_sheet_url: form.google_sheet_url,
@@ -201,12 +204,24 @@ function SettingsPage() {
           </Section>
 
           <Section title="TICKET EMAIL">
-            <Field label="Sender address" id="from">
+            <Field label="Sender address" id="from" hint="Must be on a domain verified in Resend.">
               <Input
                 id="from"
                 value={form.email_from}
                 onChange={set("email_from")}
-                placeholder="roscommonhouse@myuct.ac.za"
+                placeholder="tickets@galapass.online"
+              />
+            </Field>
+            <Field
+              label="Reply-to address"
+              id="replyTo"
+              hint="Where guest replies actually land, e.g. your student email."
+            >
+              <Input
+                id="replyTo"
+                value={form.email_reply_to}
+                onChange={set("email_reply_to")}
+                placeholder="oktsam001@uct.ac.za"
               />
             </Field>
             <Field label="Subject" id="subject">

@@ -372,6 +372,7 @@ export const updateEventSettings = createServerFn({ method: "POST" })
         email_domain: z.string().min(2),
         ticket_prefix: z.string().min(1).max(8),
         email_from: z.string().nullable().optional(),
+        email_reply_to: z.string().nullable().optional(),
         email_subject: z.string().min(1),
         email_body: z.string().min(1),
         google_sheet_url: z.string().nullable().optional(),

@@ -84,7 +84,7 @@ export const resendTicketEmail = createServerFn({ method: "POST" })
 
     const { data: event } = await supabase
       .from("events")
-      .select("name, email_from, email_subject, email_body")
+      .select("name, email_from, email_reply_to, email_subject, email_body")
       .eq("id", attendee.event_id)
       .maybeSingle();
 
@@ -92,6 +92,7 @@ export const resendTicketEmail = createServerFn({ method: "POST" })
     const status = await sendTicketEmail({
       to: attendee.email,
       from: event?.email_from,
+      replyTo: event?.email_reply_to,
       subject: event?.email_subject ?? "Your Met Gala Ticket",
       body: event?.email_body ?? "Your ticket is attached.",
       ticketNumber: ticket.ticket_number,
