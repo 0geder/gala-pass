@@ -195,3 +195,27 @@
 @utility shadow-ticket {
   box-shadow: var(--shadow-ticket);
 }
+
+@media print {
+  body.printing-ticket *:not(:has(.print-ticket)):not(.print-ticket):not(.print-ticket *) {
+    display: none !important;
+  }
+
+  body.printing-ticket *:has(.print-ticket) {
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.printing-ticket .print-ticket {
+    width: 100%;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

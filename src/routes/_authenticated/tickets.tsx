@@ -5,6 +5,7 @@ import { GalaTicket } from "@/components/gala/GalaTicket";
 import { QrImage } from "@/components/gala/QrImage";
 import { Button } from "@/components/ui/button";
 import { useOverview, type RosterRow } from "@/hooks/useGala";
+import { printTicketOnly } from "@/lib/print-ticket";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   head: () => ({
@@ -12,10 +13,14 @@ export const Route = createFileRoute("/_authenticated/tickets")({
       { title: "Tickets | Roscommon House Met Gala" },
       {
         name: "description",
-        content: "Every issued Met Gala ticket with its own unique QR token, rendered in the Burgundy and Black design.",
+        content:
+          "Every issued Met Gala ticket with its own unique QR token, rendered in the Burgundy and Black design.",
       },
       { property: "og:title", content: "Tickets | Roscommon House Met Gala" },
-      { property: "og:description", content: "Unique digital tickets and QR tokens for the Roscommon Formal." },
+      {
+        property: "og:description",
+        content: "Unique digital tickets and QR tokens for the Roscommon Formal.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -56,36 +61,42 @@ function TicketsPage() {
                   <span className="font-display block text-base leading-tight">
                     {r.firstName} {r.surname}
                   </span>
-                  <span className="text-[10px] tracking-[0.14em] text-muted-foreground">{r.studentNumber}</span>
+                  <span className="text-[10px] tracking-[0.14em] text-muted-foreground">
+                    {r.studentNumber}
+                  </span>
                 </span>
-                <span className="font-mono text-[10px] text-muted-foreground">{r.ticketNumber}</span>
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  {r.ticketNumber}
+                </span>
               </button>
             ))}
           </aside>
 
           {active?.qrToken && active.ticketNumber && (
             <div className="space-y-6">
-              <GalaTicket
-                event={data?.event ?? null}
-                ticket={{
-                  firstName: active.firstName,
-                  surname: active.surname,
-                  studentNumber: active.studentNumber,
-                  dietary: active.dietary,
-                  ticketNumber: active.ticketNumber,
-                  qrToken: active.qrToken,
-                }}
-              />
+              <div className="print-ticket">
+                <GalaTicket
+                  event={data?.event ?? null}
+                  ticket={{
+                    firstName: active.firstName,
+                    surname: active.surname,
+                    studentNumber: active.studentNumber,
+                    dietary: active.dietary,
+                    ticketNumber: active.ticketNumber,
+                    qrToken: active.qrToken,
+                  }}
+                />
+              </div>
               <div className="shadow-elegant flex flex-wrap items-center gap-6 rounded-sm border border-border bg-card p-6">
                 <QrImage value={active.qrToken} size={140} />
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] tracking-editorial text-muted-foreground">QR TOKEN</p>
                   <p className="mt-1 font-mono text-xs break-all">{active.qrToken}</p>
                   <p className="mt-3 text-xs text-muted-foreground">
-                    This token maps to ticket {active.ticketNumber} → {active.firstName} {active.surname} (
-                    {active.studentNumber}). Scanning resolves it server-side.
+                    This token maps to ticket {active.ticketNumber} → {active.firstName}{" "}
+                    {active.surname} ({active.studentNumber}). Scanning resolves it server-side.
                   </p>
-                  <Button className="mt-4" variant="outline" onClick={() => window.print()}>
+                  <Button className="mt-4" variant="outline" onClick={printTicketOnly}>
                     Print / save as PDF
                   </Button>
                 </div>

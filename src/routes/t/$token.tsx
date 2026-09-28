@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, ShieldAlert } from "lucide-react";
+import { Download, Loader2, ShieldAlert } from "lucide-react";
 import { GalaTicket } from "@/components/gala/GalaTicket";
 import { getPublicTicket } from "@/lib/ticket.functions";
+import { printTicketOnly } from "@/lib/print-ticket";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
@@ -48,20 +49,31 @@ function PublicTicketPage() {
 
         {!isPending && data?.found && (
           <>
-            <GalaTicket
-              event={data.ticket.event}
-              ticket={{
-                firstName: data.ticket.firstName,
-                surname: data.ticket.surname,
-                studentNumber: data.ticket.studentNumber,
-                dietary: data.ticket.dietary,
-                ticketNumber: data.ticket.ticketNumber,
-                qrToken: data.ticket.qrToken,
-              }}
-            />
+            <div className="print-ticket">
+              <GalaTicket
+                event={data.ticket.event}
+                ticket={{
+                  firstName: data.ticket.firstName,
+                  surname: data.ticket.surname,
+                  studentNumber: data.ticket.studentNumber,
+                  dietary: data.ticket.dietary,
+                  ticketNumber: data.ticket.ticketNumber,
+                  qrToken: data.ticket.qrToken,
+                }}
+              />
+            </div>
             <p className="mt-8 text-center text-xs tracking-[0.16em] text-champagne/50">
               PRESENT THIS QR CODE WHEN BOARDING THE BUS
             </p>
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={printTicketOnly}
+                className="inline-flex h-11 items-center gap-2 rounded-sm border border-gold/40 px-6 text-[10px] tracking-editorial text-champagne transition hover:border-gold hover:text-gold"
+              >
+                <Download className="h-4 w-4" /> SAVE TICKET AS PDF
+              </button>
+            </div>
           </>
         )}
 
