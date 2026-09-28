@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { DoorOpen, MapPin } from "lucide-react";
+import { DoorOpen, MapPin, Ticket } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/gala-hero.jpg";
 
@@ -119,7 +119,10 @@ function Landing() {
           <p className="text-[11px] tracking-editorial text-gold">THE ROSCOMMON FORMAL</p>
           <p className="mt-3 text-sm tracking-[0.2em] text-champagne/70">
             16 OCTOBER 2026 ·{" "}
-            <Link to="/venue" className="underline decoration-gold/50 underline-offset-4 hover:text-champagne">
+            <Link
+              to="/venue"
+              className="underline decoration-gold/50 underline-offset-4 hover:text-champagne"
+            >
               SUIKERBOSSIE
             </Link>
           </p>
@@ -127,12 +130,21 @@ function Landing() {
           <Countdown target={EVENT_DATE} />
 
           <Link
+            to="/get-tickets"
+            className="mt-10 inline-flex h-12 w-fit items-center gap-2 rounded-sm bg-primary px-6 text-[11px] tracking-editorial text-primary-foreground transition hover:bg-primary/90"
+          >
+            <Ticket className="h-4 w-4" /> BUY YOUR TICKET · R120
+          </Link>
+
+          <Link
             to="/venue"
-            className="mt-12 inline-flex max-w-md items-center gap-4 rounded-sm border border-gold/25 bg-noir/40 p-5 transition hover:border-gold/50"
+            className="mt-8 inline-flex max-w-md items-center gap-4 rounded-sm border border-gold/25 bg-noir/40 p-5 transition hover:border-gold/50"
           >
             <MapPin className="h-5 w-5 shrink-0 text-gold" />
             <span>
-              <span className="block text-[10px] tracking-editorial text-champagne">SEE THE VENUE</span>
+              <span className="block text-[10px] tracking-editorial text-champagne">
+                SEE THE VENUE
+              </span>
               <span className="mt-1 block text-sm text-champagne/60">
                 Suikerbossie Restaurant &amp; Estate, Hout Bay. Take a look at where it's happening.
               </span>

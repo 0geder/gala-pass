@@ -26,8 +26,22 @@ async function assertAdmin(supabase: any, userId: string) {
   if (!data) throw new Error("Forbidden: admin role required");
 }
 
+async function assertStaff(supabase: any, userId: string) {
+  const [admin, staff] = await Promise.all([
+    supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+    supabase.rpc("has_role", { _user_id: userId, _role: "staff" }),
+  ]);
+  if (admin.error) throw new Error(admin.error.message);
+  if (staff.error) throw new Error(staff.error.message);
+  if (!admin.data && !staff.data) throw new Error("Forbidden: staff role required");
+}
+
 async function actorLabel(supabase: any, userId: string) {
-  const { data } = await supabase.from("profiles").select("full_name, email").eq("id", userId).maybeSingle();
+  const { data } = await supabase
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", userId)
+    .maybeSingle();
   return data?.full_name ?? data?.email ?? userId;
 }
 
@@ -54,7 +68,8 @@ export const getMe = createServerFn({ method: "GET" })
 export const getEventOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    await assertStaff(supabase, userId);
     const { data: event, error: eventError } = await supabase
       .from("events")
       .select(EVENT_SELECT)
@@ -111,7 +126,8 @@ export const lookupTicket = createServerFn({ method: "POST" })
   .inputValidator((input: { token: string }) => z.object({ token: z.string().min(4) }).parse(input))
   .handler(async ({ data, context }) => {
     const token = normaliseToken(data.token);
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    await assertStaff(supabase, userId);
     const { data: ticket, error } = await supabase
       .from("tickets")
       .select(ticketQuery)
@@ -121,7 +137,9 @@ export const lookupTicket = createServerFn({ method: "POST" })
     if (!ticket) return { valid: false as const, reason: "not_found" as const };
 
     const attendee: any = Array.isArray(ticket.attendee) ? ticket.attendee[0] : ticket.attendee;
-    const attendance: any = Array.isArray(ticket.attendance) ? ticket.attendance[0] : ticket.attendance;
+    const attendance: any = Array.isArray(ticket.attendance)
+      ? ticket.attendance[0]
+      : ticket.attendance;
 
     if (ticket.status === "revoked" || ticket.status === "cancelled") {
       return { valid: false as const, reason: ticket.status as "revoked" | "cancelled" };
@@ -157,6 +175,7 @@ export const recordBoarding = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    await assertStaff(supabase, userId);
     const token = normaliseToken(data.token);
     const { data: ticket, error } = await supabase
       .from("tickets")
@@ -165,11 +184,18 @@ export const recordBoarding = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!ticket) return { ok: false as const, reason: "not_found" as const };
-    if (ticket.status !== "issued") return { ok: false as const, reason: "invalid_status" as const };
+    if (ticket.status !== "issued")
+      return { ok: false as const, reason: "invalid_status" as const };
 
-    const attendance: any = Array.isArray(ticket.attendance) ? ticket.attendance[0] : ticket.attendance;
+    const attendance: any = Array.isArray(ticket.attendance)
+      ? ticket.attendance[0]
+      : ticket.attendance;
     if (attendance?.boarded) {
-      return { ok: false as const, reason: "already_boarded" as const, boardingTime: attendance.boarding_time };
+      return {
+        ok: false as const,
+        reason: "already_boarded" as const,
+        boardingTime: attendance.boarding_time,
+      };
     }
 
     const now = new Date().toISOString();
@@ -177,7 +203,12 @@ export const recordBoarding = createServerFn({ method: "POST" })
     if (attendance?.id) {
       const { error: upErr } = await supabase
         .from("attendance")
-        .update({ boarded: true, boarding_time: now, boarding_staff: staff, bus_number: data.busNumber })
+        .update({
+          boarded: true,
+          boarding_time: now,
+          boarding_staff: staff,
+          bus_number: data.busNumber,
+        })
         .eq("id", attendance.id)
         .eq("boarded", false);
       if (upErr) throw new Error(upErr.message);
@@ -202,6 +233,7 @@ export const recordReturn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    await assertStaff(supabase, userId);
     const token = normaliseToken(data.token);
     const { data: ticket, error } = await supabase
       .from("tickets")
@@ -211,9 +243,15 @@ export const recordReturn = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!ticket) return { ok: false as const, reason: "not_found" as const };
 
-    const attendance: any = Array.isArray(ticket.attendance) ? ticket.attendance[0] : ticket.attendance;
+    const attendance: any = Array.isArray(ticket.attendance)
+      ? ticket.attendance[0]
+      : ticket.attendance;
     if (attendance?.returned) {
-      return { ok: false as const, reason: "already_returned" as const, returnTime: attendance.return_time };
+      return {
+        ok: false as const,
+        reason: "already_returned" as const,
+        returnTime: attendance.return_time,
+      };
     }
 
     const now = new Date().toISOString();
@@ -221,7 +259,12 @@ export const recordReturn = createServerFn({ method: "POST" })
     if (attendance?.id) {
       const { error: upErr } = await supabase
         .from("attendance")
-        .update({ returned: true, return_time: now, return_staff: staff, return_bus_number: data.busNumber })
+        .update({
+          returned: true,
+          return_time: now,
+          return_staff: staff,
+          return_bus_number: data.busNumber,
+        })
         .eq("id", attendance.id)
         .eq("returned", false);
       if (upErr) throw new Error(upErr.message);
@@ -254,7 +297,9 @@ const importRow = z.object({
  */
 export const importAttendees = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { rows: unknown[] }) => z.object({ rows: z.array(importRow).min(1).max(500) }).parse(input))
+  .inputValidator((input: { rows: unknown[] }) =>
+    z.object({ rows: z.array(importRow).min(1).max(500) }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
@@ -272,9 +317,13 @@ export const importAttendees = createServerFn({ method: "POST" })
       .from("attendees")
       .select("student_number")
       .eq("event_id", event.id);
-    const seen = new Set((existing ?? []).map((r: { student_number: string }) => r.student_number.toUpperCase()));
+    const seen = new Set(
+      (existing ?? []).map((r: { student_number: string }) => r.student_number.toUpperCase()),
+    );
 
-    const domain = event.email_domain?.startsWith("@") ? event.email_domain : `@${event.email_domain ?? "myuct.ac.za"}`;
+    const domain = event.email_domain?.startsWith("@")
+      ? event.email_domain
+      : `@${event.email_domain ?? "myuct.ac.za"}`;
     let imported = 0;
     const skipped: string[] = [];
 
@@ -318,7 +367,9 @@ async function issueTicketFor(supabase: any, eventId: string, attendeeId: string
     .maybeSingle();
   if (existing) return existing.id as string;
 
-  const { data: seq, error: seqErr } = await supabase.rpc("next_ticket_number", { _prefix: prefix });
+  const { data: seq, error: seqErr } = await supabase.rpc("next_ticket_number", {
+    _prefix: prefix,
+  });
   if (seqErr) throw new Error(seqErr.message);
 
   const bytes = new Uint8Array(16);
@@ -395,7 +446,10 @@ export const updateEventSettings = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
     const { id, ...patch } = data;
-    const { error } = await supabase.from("events").update(patch as never).eq("id", id);
+    const { error } = await supabase
+      .from("events")
+      .update(patch as never)
+      .eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

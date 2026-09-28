@@ -43,6 +43,15 @@ async function log(entry: {
   } as never);
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function randomToken(prefix: string) {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
@@ -60,7 +69,9 @@ export async function issueTicketForAttendee(eventId: string, attendeeId: string
     .maybeSingle();
   if (existing) return existing;
 
-  const { data: number, error: seqErr } = await supabaseAdmin.rpc("next_ticket_number", { _prefix: prefix });
+  const { data: number, error: seqErr } = await supabaseAdmin.rpc("next_ticket_number", {
+    _prefix: prefix,
+  });
   if (seqErr) throw new Error(seqErr.message);
 
   const { data: ticket, error } = await supabaseAdmin
@@ -100,14 +111,14 @@ export async function sendTicketEmail(params: {
   const apiKey = process.env["RESEND_API_KEY"];
   if (!apiKey) return "pending";
 
-  const ticketUrl = `${params.origin}/t/${params.qrToken}`;
+  const ticketUrl = `${params.origin}/t/${encodeURIComponent(params.qrToken)}`;
   const html = `
     <div style="font-family:Georgia,serif;background:#3B080F;color:#F4EFE5;padding:32px">
-      <p style="letter-spacing:.3em;font-size:11px;color:#B89B5E;margin:0 0 8px">${params.eventName.toUpperCase()}</p>
-      <h1 style="font-size:26px;margin:0 0 16px">${params.guestName}</h1>
-      <p style="line-height:1.6">${params.body}</p>
-      <p style="font-size:13px;color:#B89B5E">Ticket ${params.ticketNumber}</p>
-      <p><a href="${ticketUrl}" style="color:#B89B5E">View your ticket &amp; QR code</a></p>
+      <p style="letter-spacing:.3em;font-size:11px;color:#B89B5E;margin:0 0 8px">${escapeHtml(params.eventName.toUpperCase())}</p>
+      <h1 style="font-size:26px;margin:0 0 16px">${escapeHtml(params.guestName)}</h1>
+      <p style="line-height:1.6">${escapeHtml(params.body)}</p>
+      <p style="font-size:13px;color:#B89B5E">Ticket ${escapeHtml(params.ticketNumber)}</p>
+      <p><a href="${escapeHtml(ticketUrl)}" style="color:#B89B5E">View your ticket &amp; QR code</a></p>
     </div>`;
 
   try {
@@ -134,13 +145,18 @@ export async function sendTicketEmail(params: {
 }
 
 /** Full intake pipeline for one submission. Idempotent and never loses the attendee. */
-export async function processFormSubmission(submission: FormSubmission, origin: string): Promise<IntakeResult> {
+export async function processFormSubmission(
+  submission: FormSubmission,
+  origin: string,
+): Promise<IntakeResult> {
   const studentNumber = submission.studentNumber.trim().toUpperCase();
   const normalised: FormSubmission = { ...submission, studentNumber };
 
   const { data: event, error: evErr } = await supabaseAdmin
     .from("events")
-    .select("id, name, email_domain, ticket_prefix, email_from, email_reply_to, email_subject, email_body")
+    .select(
+      "id, name, email_domain, ticket_prefix, email_from, email_reply_to, email_subject, email_body",
+    )
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -149,7 +165,12 @@ export async function processFormSubmission(submission: FormSubmission, origin: 
     return { status: "FAILED", message: "No event configured" };
   }
 
-  await log({ eventId: event.id, submission: normalised, status: "RECEIVED", message: "Submission received" });
+  await log({
+    eventId: event.id,
+    submission: normalised,
+    status: "RECEIVED",
+    message: "Submission received",
+  });
 
   // Idempotency: same Google submission id, or same student for this event.
   const submissionId = submission.formSubmissionId?.trim() || null;
@@ -194,7 +215,9 @@ export async function processFormSubmission(submission: FormSubmission, origin: 
     };
   }
 
-  const domain = event.email_domain?.startsWith("@") ? event.email_domain : `@${event.email_domain ?? "myuct.ac.za"}`;
+  const domain = event.email_domain?.startsWith("@")
+    ? event.email_domain
+    : `@${event.email_domain ?? "myuct.ac.za"}`;
   const email = submission.email?.trim() || `${studentNumber.toLowerCase()}${domain}`;
 
   const { data: attendee, error: insErr } = await supabaseAdmin
@@ -230,7 +253,11 @@ export async function processFormSubmission(submission: FormSubmission, origin: 
 
   // Attendee is safe in the database from here on — ticket failures never lose them.
   try {
-    const ticket = await issueTicketForAttendee(event.id, attendee.id, event.ticket_prefix ?? "RCF");
+    const ticket = await issueTicketForAttendee(
+      event.id,
+      attendee.id,
+      event.ticket_prefix ?? "RCF",
+    );
     const emailStatus = await sendTicketEmail({
       to: attendee.email,
       from: event.email_from,

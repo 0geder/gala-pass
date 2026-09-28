@@ -30,10 +30,8 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -46,23 +44,9 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
-            data: { full_name: fullName },
-          },
-        });
-        if (error) throw error;
-        toast.success("Account created", { description: "You can now sign in." });
-        setMode("signin");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        navigate({ to: "/dashboard", replace: true });
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      navigate({ to: "/dashboard", replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Authentication failed");
     } finally {
@@ -85,20 +69,6 @@ function AuthPage() {
           onSubmit={submit}
           className="mt-8 space-y-4 rounded-sm border border-sidebar-border bg-noir/60 p-6"
         >
-          {mode === "signup" && (
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-champagne">
-                Full name
-              </Label>
-              <Input
-                id="name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="border-sidebar-border bg-transparent text-ivory"
-              />
-            </div>
-          )}
           <div className="space-y-2">
             <Label htmlFor="email" className="text-champagne">
               Email
@@ -120,7 +90,7 @@ function AuthPage() {
             <Input
               id="password"
               type="password"
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -129,20 +99,11 @@ function AuthPage() {
             />
           </div>
           <Button type="submit" disabled={busy} className="h-12 w-full">
-            {mode === "signin" ? "Sign in" : "Create staff account"}
+            Sign in
           </Button>
-          <button
-            type="button"
-            className="w-full pt-2 text-xs text-champagne/60 underline-offset-4 hover:underline"
-            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          >
-            {mode === "signin"
-              ? "Need an account? Register as staff"
-              : "Already registered? Sign in"}
-          </button>
         </form>
         <p className="mt-4 text-center text-[10px] tracking-wide text-champagne/40">
-          The first account created becomes the event administrator.
+          Housecomm access only. Accounts are created by the event administrator.
         </p>
       </div>
     </div>

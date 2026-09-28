@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as GetTicketsRouteImport } from './routes/get-tickets'
 import { Route as VenueRouteImport } from './routes/venue'
 import { Route as AuthenticatedAttendeesRouteImport } from './routes/_authenticated/attendees'
 import { Route as AuthenticatedBoardingRouteImport } from './routes/_authenticated/boarding'
@@ -36,6 +37,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GetTicketsRoute = GetTicketsRouteImport.update({
+  id: '/get-tickets',
+  path: '/get-tickets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VenueRoute = VenueRouteImport.update({
@@ -98,6 +104,7 @@ const ApiPublicIntegrationsGoogleFormRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/get-tickets': typeof GetTicketsRoute
   '/venue': typeof VenueRoute
   '/attendees': typeof AuthenticatedAttendeesRoute
   '/boarding': typeof AuthenticatedBoardingRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/get-tickets': typeof GetTicketsRoute
   '/venue': typeof VenueRoute
   '/attendees': typeof AuthenticatedAttendeesRoute
   '/boarding': typeof AuthenticatedBoardingRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/get-tickets': typeof GetTicketsRoute
   '/venue': typeof VenueRoute
   '/_authenticated/attendees': typeof AuthenticatedAttendeesRoute
   '/_authenticated/boarding': typeof AuthenticatedBoardingRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/get-tickets'
     | '/venue'
     | '/attendees'
     | '/boarding'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/get-tickets'
     | '/venue'
     | '/attendees'
     | '/boarding'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/get-tickets'
     | '/venue'
     | '/_authenticated/attendees'
     | '/_authenticated/boarding'
@@ -195,6 +207,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  GetTicketsRoute: typeof GetTicketsRoute
   VenueRoute: typeof VenueRoute
   TTokenRoute: typeof TTokenRoute
   ApiPublicIntegrationsGoogleFormRoute: typeof ApiPublicIntegrationsGoogleFormRoute
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/get-tickets': {
+      id: '/get-tickets'
+      path: '/get-tickets'
+      fullPath: '/get-tickets'
+      preLoaderRoute: typeof GetTicketsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/venue': {
@@ -332,6 +352,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  GetTicketsRoute: GetTicketsRoute,
   VenueRoute: VenueRoute,
   TTokenRoute: TTokenRoute,
   ApiPublicIntegrationsGoogleFormRoute: ApiPublicIntegrationsGoogleFormRoute,

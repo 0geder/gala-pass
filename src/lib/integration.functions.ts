@@ -6,7 +6,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const getIntegrationStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const [admin, staff] = await Promise.all([
+      supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+      supabase.rpc("has_role", { _user_id: userId, _role: "staff" }),
+    ]);
+    if (!admin.data && !staff.data) throw new Error("Forbidden: staff role required");
     const { data: logs, error } = await supabase
       .from("integration_logs")
       .select("id, created_at, student_number, status, message, source, form_submission_id")
@@ -15,7 +20,8 @@ export const getIntegrationStatus = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     const rows = logs ?? [];
-    const lastSubmission = rows.find((r: { status: string }) => r.status === "RECEIVED")?.created_at ?? null;
+    const lastSubmission =
+      rows.find((r: { status: string }) => r.status === "RECEIVED")?.created_at ?? null;
     const lastIssued = rows.find((r: { status: string }) => r.status === "TICKET_ISSUED") ?? null;
 
     return {
@@ -32,7 +38,9 @@ export const getIntegrationStatus = createServerFn({ method: "GET" })
 /** Admin: (re)generate the ticket for an attendee whose ticket failed or is missing. */
 export const retryTicketGeneration = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { attendeeId: string }) => z.object({ attendeeId: z.string().uuid() }).parse(input))
+  .inputValidator((input: { attendeeId: string }) =>
+    z.object({ attendeeId: z.string().uuid() }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
@@ -53,7 +61,11 @@ export const retryTicketGeneration = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const { issueTicketForAttendee } = await import("@/lib/integration.server");
-    const ticket = await issueTicketForAttendee(attendee.event_id, attendee.id, event?.ticket_prefix ?? "RCF");
+    const ticket = await issueTicketForAttendee(
+      attendee.event_id,
+      attendee.id,
+      event?.ticket_prefix ?? "RCF",
+    );
     return { ok: true as const, ticketNumber: ticket.ticket_number as string };
   });
 
@@ -78,8 +90,7 @@ export const resendTicketEmail = createServerFn({ method: "POST" })
 
     const ticketRel = (attendee as { tickets: unknown }).tickets;
     const ticket = (Array.isArray(ticketRel) ? ticketRel[0] : ticketRel) as
-      | { id: string; ticket_number: string; qr_token: string }
-      | undefined;
+      { id: string; ticket_number: string; qr_token: string } | undefined;
     if (!ticket) throw new Error("No ticket issued yet — retry ticket generation first");
 
     const { data: event } = await supabase
