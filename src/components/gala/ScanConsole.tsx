@@ -3,9 +3,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, BusFront, CheckCircle2, RotateCcw, Undo2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QrScanner } from "./QrScanner";
-import { lookupTicket, recordBoarding, recordReturn } from "@/lib/gala.functions";
+import { BUS_OPTIONS, lookupTicket, recordBoarding, recordReturn } from "@/lib/gala.functions";
 import { formatTime } from "@/hooks/useGala";
 
 type Ticket = NonNullable<Extract<Awaited<ReturnType<typeof lookupTicket>>, { valid: true }>["ticket"]>;
@@ -25,7 +25,7 @@ export function ScanConsole({ mode }: { mode: "boarding" | "return" }) {
   const queryClient = useQueryClient();
 
   const [state, setState] = useState<State>({ kind: "scanning" });
-  const [busNumber, setBusNumber] = useState("");
+  const [busNumber, setBusNumber] = useState<(typeof BUS_OPTIONS)[number] | "">("");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const reset = useCallback(() => setState({ kind: "scanning" }), []);
@@ -83,12 +83,13 @@ export function ScanConsole({ mode }: { mode: "boarding" | "return" }) {
   );
 
   async function confirm(ticket: Ticket) {
+    if (!busNumber) return;
     setState({ kind: "loading" });
     try {
       const result =
         mode === "boarding"
-          ? await board({ data: { token: ticket.qrToken, ...(busNumber ? { busNumber } : {}) } })
-          : await doReturn({ data: { token: ticket.qrToken } });
+          ? await board({ data: { token: ticket.qrToken, busNumber } })
+          : await doReturn({ data: { token: ticket.qrToken, busNumber } });
 
       queryClient.invalidateQueries({ queryKey: ["gala", "overview"] });
 
@@ -119,20 +120,23 @@ export function ScanConsole({ mode }: { mode: "boarding" | "return" }) {
 
   return (
     <div className="space-y-5">
-      {mode === "boarding" && (
-        <div className="flex items-center gap-3 rounded-sm border border-border bg-card p-3">
-          <label htmlFor="bus" className="text-[10px] tracking-editorial text-muted-foreground">
-            BUS
-          </label>
-          <Input
-            id="bus"
-            value={busNumber}
-            onChange={(e) => setBusNumber(e.target.value)}
-            placeholder="Bus 1"
-            className="h-9 max-w-[160px]"
-          />
-        </div>
-      )}
+      <div className="flex items-center gap-3 rounded-sm border border-border bg-card p-3">
+        <label htmlFor="bus" className="text-[10px] tracking-editorial text-muted-foreground">
+          {mode === "boarding" ? "BUS" : "RETURN BUS"}
+        </label>
+        <Select value={busNumber} onValueChange={(v) => setBusNumber(v as (typeof BUS_OPTIONS)[number])}>
+          <SelectTrigger id="bus" className="h-9 max-w-[160px]">
+            <SelectValue placeholder="Select a bus" />
+          </SelectTrigger>
+          <SelectContent>
+            {BUS_OPTIONS.map((option) => (
+              <SelectItem key={option} value={option}>
+                {option}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <QrScanner active paused={paused} onScan={handleScan} />
 
@@ -199,7 +203,12 @@ export function ScanConsole({ mode }: { mode: "boarding" | "return" }) {
               </dd>
             </div>
           </dl>
-          <Button size="lg" className="mt-5 h-14 w-full text-base" onClick={() => confirm(state.ticket)}>
+          <Button
+            size="lg"
+            className="mt-5 h-14 w-full text-base"
+            disabled={!busNumber}
+            onClick={() => confirm(state.ticket)}
+          >
             {mode === "boarding" ? (
               <>
                 <BusFront className="mr-2 h-5 w-5" /> BOARD BUS
@@ -210,6 +219,11 @@ export function ScanConsole({ mode }: { mode: "boarding" | "return" }) {
               </>
             )}
           </Button>
+          {!busNumber && (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Select a bus above before confirming.
+            </p>
+          )}
           <Button variant="ghost" className="mt-2 w-full" onClick={reset}>
             Cancel
           </Button>

@@ -207,6 +207,7 @@ function AttendeesPage() {
               <th className="px-4 py-3">EMAIL</th>
               <th className="px-4 py-3">DIETARY</th>
               <th className="px-4 py-3">TICKET</th>
+              <th className="px-4 py-3">BUS</th>
               <th className="px-4 py-3">STATUS</th>
               <th className="px-4 py-3" />
             </tr>
@@ -214,14 +215,14 @@ function AttendeesPage() {
           <tbody>
             {isPending && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
                   <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                 </td>
               </tr>
             )}
             {!isPending && filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
                   No attendees match this search.
                 </td>
               </tr>
@@ -237,6 +238,10 @@ function AttendeesPage() {
                 <td className="px-4 py-3 text-xs text-muted-foreground">{r.email}</td>
                 <td className="px-4 py-3 text-xs">{r.dietary || "—"}</td>
                 <td className="px-4 py-3 font-mono text-xs">{r.ticketNumber ?? "—"}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">
+                  {r.boarded ? (r.busNumber ?? "—") : "—"}
+                  {r.returned && <span> → {r.returnBusNumber ?? "—"}</span>}
+                </td>
                 <td className="px-4 py-3">
                   <StatusBadge row={r} />
                 </td>

@@ -4,10 +4,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const EVENT_SELECT = "*";
 
+/** The gala runs a fixed fleet of three buses. */
+export const BUS_OPTIONS = ["Bus 1", "Bus 2", "Bus 3"] as const;
+
 const ticketQuery = `
   id, ticket_number, qr_token, status, issued_at, email_sent_at, ticket_url,
   attendee:attendees ( id, first_name, surname, student_number, email, dietary_requirement ),
-  attendance:attendance ( id, boarded, boarding_time, boarding_staff, bus_number, returned, return_time, return_staff )
+  attendance:attendance ( id, boarded, boarding_time, boarding_staff, bus_number, returned, return_time, return_staff, return_bus_number )
 `;
 
 function normaliseToken(raw: string) {
@@ -92,8 +95,10 @@ export const getEventOverview = createServerFn({ method: "GET" })
         emailSentAt: (ticket?.email_sent_at as string | undefined) ?? null,
         boarded: Boolean(attendance?.boarded),
         boardingTime: (attendance?.boarding_time as string | undefined) ?? null,
+        busNumber: (attendance?.bus_number as string | undefined) ?? null,
         returned: Boolean(attendance?.returned),
         returnTime: (attendance?.return_time as string | undefined) ?? null,
+        returnBusNumber: (attendance?.return_bus_number as string | undefined) ?? null,
       };
     });
 
@@ -139,6 +144,7 @@ export const lookupTicket = createServerFn({ method: "POST" })
         busNumber: (attendance?.bus_number as string | null) ?? null,
         returned: Boolean(attendance?.returned),
         returnTime: (attendance?.return_time as string | null) ?? null,
+        returnBusNumber: (attendance?.return_bus_number as string | null) ?? null,
       },
     };
   });
@@ -146,8 +152,8 @@ export const lookupTicket = createServerFn({ method: "POST" })
 /** Record boarding. Idempotent: an already-boarded ticket is never double-recorded. */
 export const recordBoarding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { token: string; busNumber?: string }) =>
-    z.object({ token: z.string().min(4), busNumber: z.string().max(40).optional() }).parse(input),
+  .inputValidator((input: { token: string; busNumber: string }) =>
+    z.object({ token: z.string().min(4), busNumber: z.enum(BUS_OPTIONS) }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -171,7 +177,7 @@ export const recordBoarding = createServerFn({ method: "POST" })
     if (attendance?.id) {
       const { error: upErr } = await supabase
         .from("attendance")
-        .update({ boarded: true, boarding_time: now, boarding_staff: staff, bus_number: data.busNumber ?? null })
+        .update({ boarded: true, boarding_time: now, boarding_staff: staff, bus_number: data.busNumber })
         .eq("id", attendance.id)
         .eq("boarded", false);
       if (upErr) throw new Error(upErr.message);
@@ -181,7 +187,7 @@ export const recordBoarding = createServerFn({ method: "POST" })
         boarded: true,
         boarding_time: now,
         boarding_staff: staff,
-        bus_number: data.busNumber ?? null,
+        bus_number: data.busNumber,
       });
       if (insErr) throw new Error(insErr.message);
     }
@@ -191,7 +197,9 @@ export const recordBoarding = createServerFn({ method: "POST" })
 /** Record the return leg using the same ticket. */
 export const recordReturn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { token: string }) => z.object({ token: z.string().min(4) }).parse(input))
+  .inputValidator((input: { token: string; busNumber: string }) =>
+    z.object({ token: z.string().min(4), busNumber: z.enum(BUS_OPTIONS) }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const token = normaliseToken(data.token);
@@ -213,14 +221,18 @@ export const recordReturn = createServerFn({ method: "POST" })
     if (attendance?.id) {
       const { error: upErr } = await supabase
         .from("attendance")
-        .update({ returned: true, return_time: now, return_staff: staff })
+        .update({ returned: true, return_time: now, return_staff: staff, return_bus_number: data.busNumber })
         .eq("id", attendance.id)
         .eq("returned", false);
       if (upErr) throw new Error(upErr.message);
     } else {
-      const { error: insErr } = await supabase
-        .from("attendance")
-        .insert({ ticket_id: ticket.id, returned: true, return_time: now, return_staff: staff });
+      const { error: insErr } = await supabase.from("attendance").insert({
+        ticket_id: ticket.id,
+        returned: true,
+        return_time: now,
+        return_staff: staff,
+        return_bus_number: data.busNumber,
+      });
       if (insErr) throw new Error(insErr.message);
     }
     return { ok: true as const, returnTime: now };

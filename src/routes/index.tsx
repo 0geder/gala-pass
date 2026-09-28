@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BusFront, QrCode, ShieldCheck, Ticket } from "lucide-react";
+import { DoorOpen, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/gala-hero.jpg";
 
 const EVENT_DATE = new Date("2026-10-16T00:00:00");
@@ -91,6 +90,15 @@ function Landing() {
         />
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,oklch(0.147_0.002_17/0.75),oklch(0.229_0.093_17.5/0.85))]" />
 
+        <Link
+          to={signedIn ? "/dashboard" : "/auth"}
+          aria-label="Housecomm sign in"
+          title="Housecomm sign in"
+          className="absolute right-5 top-5 z-10 rounded-full p-2.5 text-champagne/25 transition hover:text-gold sm:right-8 sm:top-8"
+        >
+          <DoorOpen className="h-5 w-5" />
+        </Link>
+
         <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6 py-20">
           <div className="flex items-center gap-3">
             <img
@@ -110,67 +118,28 @@ function Landing() {
           <div className="rule-gold my-8 max-w-md" />
           <p className="text-[11px] tracking-editorial text-gold">THE ROSCOMMON FORMAL</p>
           <p className="mt-3 text-sm tracking-[0.2em] text-champagne/70">
-            16 OCTOBER 2026 · SUIKERBOSSIE
+            16 OCTOBER 2026 ·{" "}
+            <Link to="/venue" className="underline decoration-gold/50 underline-offset-4 hover:text-champagne">
+              SUIKERBOSSIE
+            </Link>
           </p>
 
           <Countdown target={EVENT_DATE} />
 
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Button asChild size="lg" className="h-12">
-              <Link to={signedIn ? "/dashboard" : "/auth"}>
-                {signedIn ? "Open event console" : "Staff sign in"}
-              </Link>
-            </Button>
-            {signedIn && (
-              <Button asChild size="lg" variant="outline" className="h-12">
-                <Link to="/scan">
-                  <QrCode className="mr-2 h-4 w-4" /> Scanner
-                </Link>
-              </Button>
-            )}
-          </div>
-
-          <div className="mt-16 grid gap-6 sm:grid-cols-3">
-            <Feature
-              icon={Ticket}
-              title="UNIQUE TICKETS"
-              body="One attendee, one ticket, one secure QR token."
-            />
-            <Feature
-              icon={QrCode}
-              title="CAMERA CHECK-IN"
-              body="Scan, verify server-side, board in one tap."
-            />
-            <Feature
-              icon={BusFront}
-              title="LIVE ATTENDANCE"
-              body="Know exactly who boarded and who has returned."
-            />
-          </div>
-
-          <p className="mt-14 flex items-center gap-2 text-xs text-champagne/50">
-            <ShieldCheck className="h-4 w-4" /> Guest details are never stored inside the QR code.
-          </p>
+          <Link
+            to="/venue"
+            className="mt-12 inline-flex max-w-md items-center gap-4 rounded-sm border border-gold/25 bg-noir/40 p-5 transition hover:border-gold/50"
+          >
+            <MapPin className="h-5 w-5 shrink-0 text-gold" />
+            <span>
+              <span className="block text-[10px] tracking-editorial text-champagne">SEE THE VENUE</span>
+              <span className="mt-1 block text-sm text-champagne/60">
+                Suikerbossie Restaurant &amp; Estate, Hout Bay. Take a look at where it's happening.
+              </span>
+            </span>
+          </Link>
         </div>
       </section>
-    </div>
-  );
-}
-
-function Feature({
-  icon: Icon,
-  title,
-  body,
-}: {
-  icon: typeof Ticket;
-  title: string;
-  body: string;
-}) {
-  return (
-    <div className="rounded-sm border border-gold/25 bg-noir/40 p-5">
-      <Icon className="h-5 w-5 text-gold" />
-      <p className="mt-4 text-[10px] tracking-editorial text-champagne">{title}</p>
-      <p className="mt-2 text-sm text-champagne/60">{body}</p>
     </div>
   );
 }

@@ -26,6 +26,7 @@ function ReturnsPage() {
   const roster = data?.roster ?? [];
   const stats = computeStats(roster);
   const stillOut = roster.filter((r) => r.boarded && !r.returned);
+  const returned = roster.filter((r) => r.returned);
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -60,6 +61,24 @@ function ReturnsPage() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {r.studentNumber} · boarded {formatTime(r.boardingTime)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="rule-gold my-4" />
+        <h3 className="text-[10px] tracking-editorial text-muted-foreground">RETURNED</h3>
+        {returned.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">Nobody has returned yet.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-border">
+            {returned.map((r) => (
+              <li key={r.id} className="py-2.5">
+                <p className="font-display text-lg leading-tight">
+                  {r.firstName} {r.surname}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {r.returnBusNumber ?? "No bus recorded"} · {formatTime(r.returnTime)}
                 </p>
               </li>
             ))}

@@ -21,6 +21,7 @@ export type Database = {
           boarding_time: string | null
           bus_number: string | null
           id: string
+          return_bus_number: string | null
           return_staff: string | null
           return_time: string | null
           returned: boolean
@@ -33,6 +34,7 @@ export type Database = {
           boarding_time?: string | null
           bus_number?: string | null
           id?: string
+          return_bus_number?: string | null
           return_staff?: string | null
           return_time?: string | null
           returned?: boolean
@@ -45,6 +47,7 @@ export type Database = {
           boarding_time?: string | null
           bus_number?: string | null
           id?: string
+          return_bus_number?: string | null
           return_staff?: string | null
           return_time?: string | null
           returned?: boolean

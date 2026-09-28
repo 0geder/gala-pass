@@ -3,6 +3,7 @@ import { QrCode } from "lucide-react";
 import { PageHeader } from "@/components/gala/AppShell";
 import { Button } from "@/components/ui/button";
 import { computeStats, formatTime, useOverview } from "@/hooks/useGala";
+import { BUS_OPTIONS } from "@/lib/gala.functions";
 
 export const Route = createFileRoute("/_authenticated/boarding")({
   head: () => ({
@@ -43,6 +44,17 @@ function BoardingPage() {
         }
       />
 
+      <section className="shadow-elegant mb-6 grid grid-cols-3 gap-4 rounded-sm border border-border bg-card p-6">
+        {BUS_OPTIONS.map((bus) => (
+          <div key={bus}>
+            <dt className="text-[9px] tracking-editorial text-muted-foreground">{bus.toUpperCase()}</dt>
+            <dd className="font-display text-3xl leading-none">
+              {boarded.filter((r) => r.busNumber === bus).length}
+            </dd>
+          </div>
+        ))}
+      </section>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <List title="ON BOARD" empty="No one has boarded yet.">
           {boarded.map((r) => (
@@ -53,7 +65,9 @@ function BoardingPage() {
                 </p>
                 <p className="text-xs tracking-[0.14em] text-muted-foreground">{r.studentNumber}</p>
               </div>
-              <p className="text-xs text-muted-foreground">{formatTime(r.boardingTime)}</p>
+              <p className="text-xs text-muted-foreground">
+                {r.busNumber ?? "No bus recorded"} · {formatTime(r.boardingTime)}
+              </p>
             </li>
           ))}
         </List>
