@@ -201,6 +201,11 @@
     display: none !important;
   }
 
+  body.printing-ticket {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   body.printing-ticket *:has(.print-ticket) {
     display: block !important;
     width: auto !important;
@@ -214,6 +219,7 @@
 
   body.printing-ticket .print-ticket {
     width: 100%;
+    overflow: hidden;
     break-inside: avoid;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
