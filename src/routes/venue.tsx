@@ -7,6 +7,11 @@ const VENUE_QUERY = "Suikerbossie Restaurant & Estate, 1 The Suikerbossie Road, 
 const MAP_EMBED_SRC = `https://www.google.com/maps?q=${encodeURIComponent(VENUE_QUERY)}&output=embed`;
 const MAP_LINK = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(VENUE_QUERY)}`;
 
+const AERIAL = {
+  src: "/venue/suikerbossie-aerial.avif",
+  alt: "Aerial view of Suikerbossie Restaurant & Estate at sunset, lawns and terrace above the Atlantic in Hout Bay",
+};
+
 const GALLERY = [
   {
     src: "/venue/fairy-light-tent.jpeg",
@@ -60,7 +65,24 @@ function VenuePage() {
       <div className="mx-auto max-w-5xl">
         <BackLink label="BACK" />
 
-        <section className="mt-10 grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+        <button
+          type="button"
+          onClick={() => setOpen(AERIAL)}
+          className="group shadow-elegant relative mt-8 block w-full overflow-hidden rounded-sm border border-gold/25"
+        >
+          <img
+            src={AERIAL.src}
+            alt={AERIAL.alt}
+            width={1654}
+            height={860}
+            className="aspect-[4/3] w-full object-cover sm:aspect-[16/8] transition duration-700 group-hover:scale-[1.02]"
+          />
+          <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-noir/80 to-transparent px-5 pt-12 pb-4 text-left text-[10px] tracking-editorial text-champagne">
+            THE ESTATE · SUNSET OVER THE ATLANTIC
+          </span>
+        </button>
+
+        <section className="mt-14 grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
             <p className="text-[11px] tracking-editorial text-gold">THE VENUE</p>
             <h1 className="font-display mt-3 text-5xl leading-[0.95] text-ivory sm:text-6xl">
