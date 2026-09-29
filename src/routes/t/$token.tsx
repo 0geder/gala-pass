@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, Loader2, ShieldAlert } from "lucide-react";
 import { GalaTicket } from "@/components/gala/GalaTicket";
 import { getPublicTicket } from "@/lib/ticket.functions";
-import { printTicketOnly } from "@/lib/print-ticket";
+import { useTicketDownload } from "@/hooks/useTicketDownload";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
@@ -30,6 +30,9 @@ function PublicTicketPage() {
     queryFn: () => fetchTicket({ data: { token } }),
     retry: false,
   });
+  const { ticketRef, saving, save } = useTicketDownload(
+    data?.found ? data.ticket.ticketNumber : null,
+  );
 
   return (
     <div className="min-h-screen bg-noir px-4 py-12 sm:py-20">
@@ -49,7 +52,7 @@ function PublicTicketPage() {
 
         {!isPending && data?.found && (
           <>
-            <div className="print-ticket">
+            <div ref={ticketRef}>
               <GalaTicket
                 event={data.ticket.event}
                 ticket={{
@@ -65,14 +68,23 @@ function PublicTicketPage() {
             <p className="mt-8 text-center text-xs tracking-[0.16em] text-champagne/50">
               PRESENT THIS QR CODE WHEN BOARDING THE BUS
             </p>
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={printTicketOnly}
-                className="inline-flex h-11 items-center gap-2 rounded-sm border border-gold/40 px-6 text-[10px] tracking-editorial text-champagne transition hover:border-gold hover:text-gold"
-              >
-                <Download className="h-4 w-4" /> SAVE TICKET AS PDF
-              </button>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              {(["pdf", "png"] as const).map((format) => (
+                <button
+                  key={format}
+                  type="button"
+                  disabled={saving !== null}
+                  onClick={() => save(format)}
+                  className="inline-flex h-11 items-center gap-2 rounded-sm border border-gold/40 px-6 text-[10px] tracking-editorial text-champagne transition hover:border-gold hover:text-gold disabled:opacity-60"
+                >
+                  {saving === format ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  {format === "pdf" ? "SAVE AS PDF" : "SAVE AS IMAGE"}
+                </button>
+              ))}
             </div>
           </>
         )}

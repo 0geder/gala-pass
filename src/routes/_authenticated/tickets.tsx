@@ -5,7 +5,8 @@ import { GalaTicket } from "@/components/gala/GalaTicket";
 import { QrImage } from "@/components/gala/QrImage";
 import { Button } from "@/components/ui/button";
 import { useOverview, type RosterRow } from "@/hooks/useGala";
-import { printTicketOnly } from "@/lib/print-ticket";
+import { Download, Loader2 } from "lucide-react";
+import { useTicketDownload } from "@/hooks/useTicketDownload";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   head: () => ({
@@ -33,6 +34,7 @@ function TicketsPage() {
   const roster = (data?.roster ?? []).filter((r) => r.qrToken && r.ticketNumber);
   const [selected, setSelected] = useState<RosterRow | null>(null);
   const active = selected ?? roster[0] ?? null;
+  const { ticketRef, saving, save } = useTicketDownload(active?.ticketNumber);
 
   return (
     <div>
@@ -74,7 +76,7 @@ function TicketsPage() {
 
           {active?.qrToken && active.ticketNumber && (
             <div className="space-y-6">
-              <div className="print-ticket">
+              <div ref={ticketRef}>
                 <GalaTicket
                   event={data?.event ?? null}
                   ticket={{
@@ -96,9 +98,23 @@ function TicketsPage() {
                     This token maps to ticket {active.ticketNumber} → {active.firstName}{" "}
                     {active.surname} ({active.studentNumber}). Scanning resolves it server-side.
                   </p>
-                  <Button className="mt-4" variant="outline" onClick={printTicketOnly}>
-                    Print / save as PDF
-                  </Button>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {(["pdf", "png"] as const).map((format) => (
+                      <Button
+                        key={format}
+                        variant="outline"
+                        disabled={saving !== null}
+                        onClick={() => save(format)}
+                      >
+                        {saving === format ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="mr-2 h-4 w-4" />
+                        )}
+                        {format === "pdf" ? "Save as PDF" : "Save as image"}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
