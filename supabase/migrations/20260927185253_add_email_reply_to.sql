@@ -1,1 +1,1 @@
-ALTER TABLE public.events ADD COLUMN email_reply_to text;
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS email_reply_to text;
