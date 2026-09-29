@@ -75,17 +75,23 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="lg:pl-64">
         <header className="surface-noir sticky top-0 z-30 flex items-center justify-between border-b border-sidebar-border px-4 py-3 lg:hidden">
-          <button onClick={() => setOpen(true)} aria-label="Open navigation" className="p-1 text-ivory">
+          <button
+            onClick={() => setOpen(true)}
+            aria-label="Open navigation"
+            className="p-1 text-ivory"
+          >
             <Menu className="h-6 w-6" />
           </button>
-          <div className="text-center">
+          <Link to="/" title="Back to the landing page" className="text-center">
             <p className="text-[9px] tracking-editorial text-champagne/70">ROSCOMMON HOUSE</p>
             <p className="font-display text-lg leading-tight text-ivory">MET GALA</p>
-          </div>
+          </Link>
           <div className="w-8" />
         </header>
 
-        <main className="mx-auto w-full max-w-6xl px-4 pt-6 pb-28 sm:px-6 lg:pb-12">{children}</main>
+        <main className="mx-auto w-full max-w-6xl px-4 pt-6 pb-28 sm:px-6 lg:pb-12">
+          {children}
+        </main>
       </div>
 
       {/* Mobile bottom nav */}
@@ -115,9 +121,13 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate: (
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="px-6 pt-8 pb-6">
-        <p className="text-[9px] tracking-editorial text-champagne/70">ROSCOMMON HOUSE</p>
-        <h1 className="font-display mt-2 text-2xl leading-none text-ivory">MET GALA</h1>
-        <p className="mt-2 text-[9px] tracking-[0.22em] text-gold">BURGUNDY & BLACK</p>
+        <Link to="/" onClick={onNavigate} title="Back to the landing page" className="group block">
+          <p className="text-[9px] tracking-editorial text-champagne/70">ROSCOMMON HOUSE</p>
+          <h1 className="font-display mt-2 text-2xl leading-none text-ivory transition-colors group-hover:text-gold">
+            MET GALA
+          </h1>
+          <p className="mt-2 text-[9px] tracking-[0.22em] text-gold">BURGUNDY & BLACK</p>
+        </Link>
         <div className="rule-gold mt-5" />
       </div>
       <nav className="space-y-0.5 px-3 pb-6">
@@ -156,7 +166,12 @@ function SidebarFooter({
     <div className="border-t border-sidebar-border px-4 py-4">
       <p className="truncate text-xs text-champagne">{me?.fullName ?? me?.email ?? "Staff"}</p>
       <p className="text-[9px] tracking-editorial text-gold">{me?.isAdmin ? "ADMIN" : "STAFF"}</p>
-      <Button variant="ghost" size="sm" className="mt-3 w-full justify-start text-champagne/70" onClick={onSignOut}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mt-3 w-full justify-start text-champagne/70"
+        onClick={onSignOut}
+      >
         <LogOut className="mr-2 h-4 w-4" /> Sign out
       </Button>
     </div>
@@ -179,7 +194,9 @@ export function PageHeader({
       <div>
         <p className="text-[10px] tracking-editorial text-primary">{eyebrow}</p>
         <h1 className="font-display mt-2 text-3xl leading-tight sm:text-4xl">{title}</h1>
-        {description && <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{description}</p>}
+        {description && (
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{description}</p>
+        )}
       </div>
       {action}
     </div>
