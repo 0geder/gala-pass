@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { DoorOpen, MapPin, Ticket } from "lucide-react";
+import { DoorOpen, MapPin, ScrollText, Ticket } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/gala-hero.jpg";
 
@@ -136,20 +136,37 @@ function Landing() {
             <Ticket className="h-4 w-4" /> BUY YOUR TICKET · R120
           </Link>
 
-          <Link
-            to="/venue"
-            className="mt-8 inline-flex max-w-md items-center gap-4 rounded-sm border border-gold/25 bg-noir/40 p-5 transition hover:border-gold/50"
-          >
-            <MapPin className="h-5 w-5 shrink-0 text-gold" />
-            <span>
-              <span className="block text-[10px] tracking-editorial text-champagne">
-                SEE THE VENUE
+          <div className="mt-8 grid max-w-3xl gap-4 sm:grid-cols-2">
+            <Link
+              to="/venue"
+              className="flex items-center gap-4 rounded-sm border border-gold/25 bg-noir/40 p-5 transition hover:border-gold/50"
+            >
+              <MapPin className="h-5 w-5 shrink-0 text-gold" />
+              <span>
+                <span className="block text-[10px] tracking-editorial text-champagne">
+                  SEE THE VENUE
+                </span>
+                <span className="mt-1 block text-sm text-champagne/60">
+                  Suikerbossie Restaurant &amp; Estate, Hout Bay. Take a look at where it's
+                  happening.
+                </span>
               </span>
-              <span className="mt-1 block text-sm text-champagne/60">
-                Suikerbossie Restaurant &amp; Estate, Hout Bay. Take a look at where it's happening.
+            </Link>
+            <Link
+              to="/programme"
+              className="flex items-center gap-4 rounded-sm border border-gold/25 bg-noir/40 p-5 transition hover:border-gold/50"
+            >
+              <ScrollText className="h-5 w-5 shrink-0 text-gold" />
+              <span>
+                <span className="block text-[10px] tracking-editorial text-champagne">
+                  SEE THE PROGRAMME
+                </span>
+                <span className="mt-1 block text-sm text-champagne/60">
+                  The running order for the night, from welcome drinks to the last dance.
+                </span>
               </span>
-            </span>
-          </Link>
+            </Link>
+          </div>
         </div>
       </section>
     </div>
