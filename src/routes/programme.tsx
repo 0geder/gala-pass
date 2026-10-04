@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 const RUNNING_ORDER = [
   { time: "5:00 PM", item: "Arrivals, Welcome Drinks & Photobooth" },
@@ -91,17 +91,7 @@ function ProgrammePage() {
           </ol>
         </section>
 
-        <div className="mt-14 text-center">
-          <a
-            href="/roscommon-met-programme.pdf"
-            download
-            className="inline-flex h-11 items-center gap-2 rounded-sm border border-gold/40 px-6 text-[10px] tracking-editorial text-champagne transition hover:border-gold hover:text-gold"
-          >
-            <Download className="h-4 w-4" /> DOWNLOAD THE PROGRAMME
-          </a>
-        </div>
-
-        <div className="mt-14">
+        <div className="mt-16">
           <BackLink label="BACK TO THE GALA" />
         </div>
       </div>
