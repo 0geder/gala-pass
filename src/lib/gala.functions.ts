@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { normaliseStudentNumber, tidyName } from "@/lib/attendee-normalize";
 
 const EVENT_SELECT = "*";
 
@@ -328,7 +329,7 @@ export const importAttendees = createServerFn({ method: "POST" })
     const skipped: string[] = [];
 
     for (const row of data.rows) {
-      const smid = row.studentNumber.trim().toUpperCase();
+      const smid = normaliseStudentNumber(row.studentNumber);
       if (seen.has(smid)) {
         skipped.push(smid);
         continue;
@@ -339,8 +340,8 @@ export const importAttendees = createServerFn({ method: "POST" })
         .from("attendees")
         .insert({
           event_id: event.id,
-          first_name: row.firstName.trim(),
-          surname: row.surname.trim(),
+          first_name: tidyName(row.firstName),
+          surname: tidyName(row.surname),
           student_number: smid,
           email,
           dietary_requirement: row.dietary?.trim() || null,

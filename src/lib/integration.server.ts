@@ -3,6 +3,7 @@
  * Server-only: uses the service-role client. Never import from client code.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { isValidStudentNumber, normaliseStudentNumber, tidyName } from "@/lib/attendee-normalize";
 
 export type FormSubmission = {
   firstName: string;
@@ -149,8 +150,13 @@ export async function processFormSubmission(
   submission: FormSubmission,
   origin: string,
 ): Promise<IntakeResult> {
-  const studentNumber = submission.studentNumber.trim().toUpperCase();
-  const normalised: FormSubmission = { ...submission, studentNumber };
+  const studentNumber = normaliseStudentNumber(submission.studentNumber);
+  const normalised: FormSubmission = {
+    ...submission,
+    studentNumber,
+    firstName: tidyName(submission.firstName),
+    surname: tidyName(submission.surname),
+  };
 
   const { data: event, error: evErr } = await supabaseAdmin
     .from("events")
@@ -218,14 +224,17 @@ export async function processFormSubmission(
   const domain = event.email_domain?.startsWith("@")
     ? event.email_domain
     : `@${event.email_domain ?? "myuct.ac.za"}`;
-  const email = submission.email?.trim() || `${studentNumber.toLowerCase()}${domain}`;
+  const providedEmail = submission.email?.trim() || null;
+  // A derived address is only real when the student number is well-formed.
+  const canEmail = Boolean(providedEmail) || isValidStudentNumber(studentNumber);
+  const email = providedEmail || `${studentNumber.toLowerCase()}${domain}`;
 
   const { data: attendee, error: insErr } = await supabaseAdmin
     .from("attendees")
     .insert({
       event_id: event.id,
-      first_name: submission.firstName.trim(),
-      surname: submission.surname.trim(),
+      first_name: normalised.firstName,
+      surname: normalised.surname,
       student_number: studentNumber,
       email,
       dietary_requirement: submission.dietaryRequirement?.trim() || null,
@@ -258,18 +267,20 @@ export async function processFormSubmission(
       attendee.id,
       event.ticket_prefix ?? "RCF",
     );
-    const emailStatus = await sendTicketEmail({
-      to: attendee.email,
-      from: event.email_from,
-      replyTo: event.email_reply_to,
-      subject: event.email_subject,
-      body: event.email_body,
-      ticketNumber: ticket.ticket_number,
-      qrToken: ticket.qr_token,
-      eventName: event.name,
-      guestName: `${attendee.first_name} ${attendee.surname}`,
-      origin,
-    });
+    const emailStatus = canEmail
+      ? await sendTicketEmail({
+          to: attendee.email,
+          from: event.email_from,
+          replyTo: event.email_reply_to,
+          subject: event.email_subject,
+          body: event.email_body,
+          ticketNumber: ticket.ticket_number,
+          qrToken: ticket.qr_token,
+          eventName: event.name,
+          guestName: `${attendee.first_name} ${attendee.surname}`,
+          origin,
+        })
+      : ("pending" as const);
     if (emailStatus === "sent") {
       await supabaseAdmin
         .from("tickets")
@@ -280,8 +291,9 @@ export async function processFormSubmission(
       eventId: event.id,
       submission: normalised,
       status: "TICKET_ISSUED",
-      message:
-        emailStatus === "sent"
+      message: !canEmail
+        ? `Ticket ${ticket.ticket_number} issued; email NOT sent: "${studentNumber}" is not a valid student number, fix the email and resend`
+        : emailStatus === "sent"
           ? `Ticket ${ticket.ticket_number} issued and emailed`
           : `Ticket ${ticket.ticket_number} issued — email ${emailStatus === "failed" ? "failed" : "queued (no mail provider configured)"}`,
       attendeeId: attendee.id,
